@@ -359,9 +359,10 @@ async function sendOfferPushToDrivers(params: {
 
 // ✅ UID(s) do master (produção e/ou fixo)
 const SUPER_ADMINS = new Set<string>([
+  "fRIsOPAADyMNMSbvE52Dw4NWnBF2",
   "yN1SFDimT8gewgJxrb4b0NgGCzuX",
   // ✅ seu UID atual do master (emulador/dev)
-  "Bz6OvZ0e58jSX6aPpyc6WPVj4QQe",
+  "Bz6OvZ0e58jSX6aPpyc6WPVj4QQe", 
 ]);
 
 // ✅ Email(s) do master (SÓ para DEV no emulator — não precisa ficar trocando UID)
@@ -396,8 +397,16 @@ export const adminCreateOwnerUserAndLink = onCall(async (request) => {
   console.log("[adminCreateOwnerUserAndLink] auth:", request.auth);
   console.log("[adminCreateOwnerUserAndLink] uid:", request.auth?.uid);
 
-  // ✅ valida master (UID em prod, email em DEV)
-  assertMaster(request);
+  // ✅ LISTA VIP DE DONOS DO SISTEMA (Sua digital blindada está aqui!)
+  const SUPER_ADMINS = [
+    "fRIsOPAADyMNMSbvE52Dw4NWnBF2",
+    "Bz6OvZ0e58jSX6aPpyc6WPVj4QQe", 
+  ];
+
+  // ✅ VALIDAÇÃO DIRETA E EXATA
+  if (!request.auth || !SUPER_ADMINS.includes(request.auth.uid)) {
+    throw new HttpsError("permission-denied", "Acesso negado. Você não é um Master.");
+  }
 
   const tenantId = String(request.data?.tenantId || "").trim();
   const email = String(request.data?.email || "").trim().toLowerCase();
@@ -416,7 +425,7 @@ export const adminCreateOwnerUserAndLink = onCall(async (request) => {
     throw new HttpsError("not-found", "Tenant não encontrado.");
   }
 
-  let userRecord: admin.auth.UserRecord;
+  let userRecord;
   try {
     userRecord = await admin.auth().getUserByEmail(email);
   } catch {
