@@ -1,0 +1,16 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // Fotos de perfil dos motoboys
+    match /drivers/{uid}/{fileName} {
+      allow read: if true; // pode mostrar foto no painel
+      allow write: if request.auth != null && request.auth.uid == uid;
+    }
+
+    // Default: bloqueia
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

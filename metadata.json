@@ -1,0 +1,5 @@
+{
+  "name": "Gemini Code Architect",
+  "description": "Visualize, analyze, and refactor your codebase with Gemini AI. Upload a zip to get started.",
+  "requestFramePermissions": []
+}

@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="96" y1="80" x2="416" y2="432" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0EA5E9"/>
+      <stop offset="1" stop-color="#10B981"/>
+    </linearGradient>
+    <filter id="shadow" x="0" y="0" width="512" height="512" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="18" stdDeviation="18" flood-color="#000" flood-opacity="0.25"/>
+    </filter>
+  </defs>
+
+  <rect x="48" y="48" width="416" height="416" rx="104" fill="url(#bg)"/>
+
+  <!-- Rider + bike mark (simplificado) -->
+  <g filter="url(#shadow)" transform="translate(0,8)" stroke="#FFFFFF" stroke-width="22" stroke-linecap="round" stroke-linejoin="round">
+    <!-- wheels -->
+    <circle cx="192" cy="344" r="44" fill="none" opacity="0.95"/>
+    <circle cx="336" cy="344" r="44" fill="none" opacity="0.95"/>
+    <!-- frame -->
+    <path d="M224 344h54l30-54h46" opacity="0.95"/>
+    <path d="M254 344l-34-54h-44" opacity="0.95"/>
+    <!-- handlebar -->
+    <path d="M354 290l30-24" opacity="0.95"/>
+    <!-- rider -->
+    <path d="M248 256c0-20 16-36 36-36s36 16 36 36" opacity="0.95"/>
+    <path d="M284 256l-36 36" opacity="0.95"/>
+    <!-- delivery box -->
+    <path d="M188 248h64v54h-64z" opacity="0.95"/>
+  </g>
+
+  <!-- Location pin (small) -->
+  <g transform="translate(0,-10)" opacity="0.85" fill="#FFFFFF">
+    <path d="M256 156c-28 0-50 22-50 50 0 42 50 94 50 94s50-52 50-94c0-28-22-50-50-50zm0 68a18 18 0 1 1 0-36 18 18 0 0 1 0 36z"/>
+  </g>
+</svg>

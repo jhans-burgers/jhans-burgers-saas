@@ -1,0 +1,157 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() { return request.auth != null; }
+
+    function isMaster() {
+      return isSignedIn() && request.auth.uid in [
+        "Bz6OvZ0e58jSX6aPpyc6WPVj4QQe",
+        "fRIsOPAADyMNMSbvE52Dw4NWnBF2" // Adicione o seu UID aqui
+      ];
+    }
+
+    function userRef() {
+      return /databases/$(database)/documents/users/$(request.auth.uid);
+    }
+
+    function hasUserDoc() {
+      return isSignedIn() && exists(userRef());
+    }
+
+    function userDoc() {
+      return get(userRef()).data;
+    }
+
+    function isTenantStaff(tenantId) {
+      return hasUserDoc()
+        && userDoc().tenantId == tenantId
+        && (userDoc().role in ["owner", "admin"]);
+    }
+
+    function isTenantDriver(tenantId) {
+      return hasUserDoc()
+        && userDoc().tenantId == tenantId
+        && userDoc().role == "driver";
+    }
+
+    match /tenantSlugs/{slug} {
+      allow read: if true;
+      allow create, update, delete: if isMaster();
+    }
+
+    match /tenants/{tenantId} {
+
+      function isTenantPublicReadable() {
+        return (resource.data.publicEnabled == true)
+          && (
+            resource.data.paidUntil == null
+            || resource.data.paidUntil > request.time
+          );
+      }
+
+      allow get: if isMaster() || isTenantStaff(tenantId) || isTenantPublicReadable();
+      allow list: if isMaster();
+      allow update: if isMaster() || isTenantStaff(tenantId);
+      allow create, delete: if isMaster();
+
+      match /private/{docId} {
+        allow read, write: if isMaster() || isTenantStaff(tenantId);
+      }
+
+      match /products/{productId} {
+        allow get, list: if true;
+        allow create, update, delete: if isMaster() || isTenantStaff(tenantId);
+      }
+
+      match /drivers/{driverId} {
+        allow list: if isMaster() || isTenantStaff(tenantId);
+        allow get: if (isMaster() || isTenantStaff(tenantId))
+          || (isSignedIn() && request.auth.uid == driverId);
+          
+        // ✅ CORREÇÃO AQUI: Admin agora pode dar UPDATE (inativar/editar) no motoboy
+        allow update: if (isSignedIn() && request.auth.uid == driverId) || isTenantStaff(tenantId) || isMaster();
+        
+        // Admin agora pode deletar, caso seja estritamente necessário
+        allow create, delete: if isMaster() || isTenantStaff(tenantId);
+
+        match /fcmTokens/{tokenId} {
+          allow read, write: if isSignedIn() && request.auth.uid == driverId;
+        }
+      }
+
+      match /orders/{orderId} {
+        allow create: if true;
+        allow get, list: if (isMaster() || isTenantStaff(tenantId))
+          || (isSignedIn() && isTenantDriver(tenantId));
+        allow update: if (isMaster() || isTenantStaff(tenantId))
+          || (isSignedIn()
+              && isTenantDriver(tenantId)
+              && (
+                  resource.data.get("driverId", "") == "" 
+                  || resource.data.get("driverId", "") == request.auth.uid
+                 )
+             );
+        allow delete: if isMaster() || isTenantStaff(tenantId);
+      }
+
+      match /driverOffers/{offerId} {
+        allow get, list: if (isMaster() || isTenantStaff(tenantId))
+          || (isSignedIn()
+              && isTenantDriver(tenantId)
+              && resource.data.get("driverId", "") == request.auth.uid);
+        allow create, update, delete: if false;
+      }
+
+      match /giveaway_entries/{entryId} {
+        allow create: if true;
+        allow get, list: if isMaster() || isTenantStaff(tenantId);
+        allow update, delete: if isMaster() || isTenantStaff(tenantId);
+      }
+
+      match /clients/{clientId} {
+        allow get, list: if isMaster() || isTenantStaff(tenantId);
+        allow create, update, delete: if isMaster() || isTenantStaff(tenantId);
+      }
+
+      match /inventory/{itemId} {
+        allow get, list: if isMaster() || isTenantStaff(tenantId);
+        allow create, update, delete: if isMaster() || isTenantStaff(tenantId);
+      }
+
+      match /suppliers/{supplierId} {
+        allow get, list: if isMaster() || isTenantStaff(tenantId);
+        allow create, update, delete: if isMaster() || isTenantStaff(tenantId);
+      }
+
+      match /shoppingList/{itemId} {
+        allow get, list: if isMaster() || isTenantStaff(tenantId);
+        allow create, update, delete: if isMaster() || isTenantStaff(tenantId);
+      }
+
+      match /vales/{valeId} {
+        allow get, list: if isMaster() || isTenantStaff(tenantId);
+        allow create, update, delete: if isMaster() || isTenantStaff(tenantId);
+      }
+
+      match /giveaway_winners/{winnerId} {
+        allow get, list: if isMaster() || isTenantStaff(tenantId);
+        allow create, update, delete: if isMaster() || isTenantStaff(tenantId);
+      }
+
+      match /{document=**} {
+        allow read, write: if false;
+      }
+    }
+
+    match /users/{uid} {
+      allow read: if isSignedIn() && request.auth.uid == uid;
+      allow create, update: if isSignedIn() && request.auth.uid == uid;
+      allow delete: if false;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

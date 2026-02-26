@@ -1,0 +1,12 @@
+@import "leaflet/dist/leaflet.css";
+
+html, body, #root { height: 100%; }
+body { margin: 0; background: #0d1117; }
+
+@keyframes slide {
+  0% { transform: translateX(-120%); }
+  100% { transform: translateX(360%); }
+}
+
+
+.leaflet-container { width: 100%; height: 100%; }
