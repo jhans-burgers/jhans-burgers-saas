@@ -97,7 +97,7 @@ export default function MasterAdminPage() {
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [creatingOneStep, setCreatingOneStep] = useState(false);
 
-  const SUPER_ADMINS = useMemo(() => ["Bz6OvZ0e58jSX6aPpyc6WPVj4QQe"], []);
+  const SUPER_ADMINS = useMemo(() => ["Bz6OvZ0e58jSX6aPpyc6WPVj4QQe", "fRIsOPAADyMNMSbvE52Dw4NWnBF2"], []);
 
   // Callable Function
 const functions = useMemo(() => getFunctions(appMaster, "us-central1"), []);
