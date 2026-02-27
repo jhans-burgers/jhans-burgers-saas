@@ -126,7 +126,11 @@ export interface Driver {
     paymentRate?: number;
     lastSettlementAt?: any;
     password?: string; // Senha simples para login do motorista
+    documentFront?: string; 
+    documentBack?: string;
+    documentPhoto?: string; // <-- Adicione esta linha
 }
+
 
 // --- Dispatch / Ofertas de Entrega (estilo iFood) ---
 export interface DriverOffer {

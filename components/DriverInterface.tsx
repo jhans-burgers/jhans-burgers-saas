@@ -7,7 +7,7 @@ import {
     ChevronLeft, MoreVertical, Home, User, AlertTriangle, Camera, ChevronRight, Ban, ImagePlus, Eye, EyeOff
 } from 'lucide-react';
 import { Driver, Order, Vale, DriverOffer } from '../types';
-import { isToday, formatTime, formatCurrency, compressImage, formatOrderId } from '../utils';
+import { isToday, formatTime, formatCurrency, formatOrderId } from '../utils';
 import { Footer } from './Shared';
 import { EditOrderModal, GenericConfirmModal } from './Modals';
 import { serverTimestamp } from 'firebase/firestore';
@@ -29,6 +29,11 @@ interface DriverAppProps {
     onUpdateDriver: (id: string, data: any) => void;
 }
 
+const NOTIFICATION_SOUND = 'https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3'; 
+const DEFAULT_AVATAR = 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png'; 
+
+const GPS_CONFIG = { MIN_DISTANCE_METERS: 0, MIN_TIME_MS: 1000, MAX_AGE_MS: 5000, TIMEOUT_MS: 10000 };
+
 // ==========================================
 // COMPRESSOR DE IMAGEM NATIVO (BASE64)
 // ==========================================
@@ -42,7 +47,7 @@ const compressImageNative = (file: File): Promise<string> => {
             img.onload = () => {
                 const canvas = document.createElement('canvas');
                 let { width, height } = img;
-                const MAX_SIZE = 800; // Reduz para um tamanho ótimo para o Firebase
+                const MAX_SIZE = 800; // Tamanho ideal para o Firebase
 
                 if (width > height && width > MAX_SIZE) {
                     height *= MAX_SIZE / width;
@@ -56,8 +61,6 @@ const compressImageNative = (file: File): Promise<string> => {
                 canvas.height = height;
                 const ctx = canvas.getContext('2d');
                 ctx?.drawImage(img, 0, 0, width, height);
-                
-                // Transforma a foto em texto JPEG com 60% de qualidade
                 resolve(canvas.toDataURL('image/jpeg', 0.6)); 
             };
             img.onerror = reject;
@@ -65,11 +68,6 @@ const compressImageNative = (file: File): Promise<string> => {
         reader.onerror = reject;
     });
 };
-
-const NOTIFICATION_SOUND = 'https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3'; 
-const DEFAULT_AVATAR = 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png'; 
-
-const GPS_CONFIG = { MIN_DISTANCE_METERS: 0, MIN_TIME_MS: 1000, MAX_AGE_MS: 5000, TIMEOUT_MS: 10000 };
 
 const getDistance = (lat1: number, lng1: number, lat2: number, lng2: number) => {
     const R = 6371e3; 
@@ -140,33 +138,18 @@ const SwipeButton = ({ text, onConfirm, colorClass, icon: Icon }: any) => {
     );
 };
 
-// =================================================================================
-// ✅ NOVO COMPONENTE: MODAL DE CARREGAMENTO ANIMADO (MODERN LOADER)
-// =================================================================================
 const ModernLoader = ({ title = "Processando", subtitle = "Por favor, aguarde um momento...", isFullScreen = true }) => {
     const content = (
         <div className="flex flex-col items-center justify-center text-center">
-            {/* Container da Animação */}
             <div className="relative flex items-center justify-center w-28 h-28 mb-8">
-                {/* Anel Externo Girando (Azul Neon) */}
                 <div className="absolute inset-0 rounded-full border-t-[4px] border-b-[4px] border-[#3b82f6] animate-[spin_1.5s_linear_infinite] shadow-[0_0_20px_rgba(59,130,246,0.6)]"></div>
-                
-                {/* Anel Interno Girando ao Contrário (Esmeralda) */}
                 <div className="absolute inset-3 rounded-full border-l-[4px] border-r-[4px] border-[#34d399] animate-[spin_1s_linear_infinite_reverse] shadow-[0_0_15px_rgba(52,211,153,0.4)]"></div>
-                
-                {/* Ícone Central Pulsando */}
                 <div className="bg-slate-900 rounded-full p-4 animate-pulse">
                     <Package className="text-white" size={32} strokeWidth={1.5} />
                 </div>
             </div>
-
-            {/* Textos */}
-            <h2 className="text-2xl font-black text-white uppercase tracking-[0.15em] drop-shadow-lg">
-                {title}
-            </h2>
-            <p className="text-slate-400 text-sm mt-3 px-8 font-medium max-w-xs">
-                {subtitle}
-            </p>
+            <h2 className="text-2xl font-black text-white uppercase tracking-[0.15em] drop-shadow-lg">{title}</h2>
+            <p className="text-slate-400 text-sm mt-3 px-8 font-medium max-w-xs">{subtitle}</p>
         </div>
     );
 
@@ -177,7 +160,6 @@ const ModernLoader = ({ title = "Processando", subtitle = "Por favor, aguarde um
             </div>
         );
     }
-
     return content;
 };
 
@@ -214,12 +196,6 @@ export default function DriverInterface({ driver, orders, unassignedOrders = [],
   const wakeLockRef = useRef<any>(null);
   const watchIdRef = useRef<number | null>(null);
   const lastPositionRef = useRef<{lat: number, lng: number, time: number} | null>(null);
-  
-  const avatarInputRef = useRef<HTMLInputElement>(null);
-  const docFrontInputRef = useRef<HTMLInputElement>(null);
-  const docBackInputRef = useRef<HTMLInputElement>(null);
-  const photoInputRef = useRef<HTMLInputElement>(null);
-  
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const stopNotificationSound = () => { if (audioRef.current) { audioRef.current.pause(); audioRef.current.currentTime = 0; } };
@@ -282,69 +258,12 @@ export default function DriverInterface({ driver, orders, unassignedOrders = [],
       setGpsActive(false); setCurrentLocation(null);
   };
 
- // ✅ FUNÇÕES DE UPLOAD CORRIGIDAS (Com pausa para o Loading renderizar e Compressor Nativo)
-  const handleAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-      if (!e.target.files || e.target.files.length === 0) return;
-      const file = e.target.files[0];
-      
-      setIsUploadingPhoto(true); // 1. Manda mostrar a tela de loading
-      
-      // 2. Dá 50 milissegundos para o celular desenhar a tela antes de travar o processador
-      setTimeout(async () => {
-          try { 
-              const compressedBase64 = await compressImageNative(file); 
-              await onUpdateDriver(driver.id, { avatar: compressedBase64 }); 
-              alert("Selfie atualizada com sucesso!");
-          } catch (err) { 
-              alert("Erro ao processar imagem. Tente novamente."); 
-          } finally {
-              setIsUploadingPhoto(false);
-              if (avatarInputRef.current) avatarInputRef.current.value = '';
-          }
-      }, 50);
-  };
-
-  const handleDocFrontUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-      if (!e.target.files || e.target.files.length === 0) return;
-      const file = e.target.files[0];
-      setIsUploadingPhoto(true);
-      
-      setTimeout(async () => {
-          try { 
-              const compressedBase64 = await compressImageNative(file); 
-              await onUpdateDriver(driver.id, { documentFront: compressedBase64 });
-              alert("Frente do documento enviada!");
-          } catch (err) { 
-              alert("Erro ao processar a foto. Tente novamente."); 
-          } finally {
-              setIsUploadingPhoto(false);
-              if (docFrontInputRef.current) docFrontInputRef.current.value = '';
-          }
-      }, 50);
-  };
-
-  const handleDocBackUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-      if (!e.target.files || e.target.files.length === 0) return;
-      const file = e.target.files[0];
-      setIsUploadingPhoto(true);
-      
-      setTimeout(async () => {
-          try { 
-              const compressedBase64 = await compressImageNative(file); 
-              await onUpdateDriver(driver.id, { documentBack: compressedBase64 });
-              alert("Verso do documento enviado!");
-          } catch (err) { 
-              alert("Erro ao processar a foto. Tente novamente."); 
-          } finally {
-              setIsUploadingPhoto(false);
-              if (docBackInputRef.current) docBackInputRef.current.value = '';
-          }
-      }, 50);
-  };
-
+  // ✅ FUNÇÕES DE UPLOAD COM AVISOS E LABEL NATIVA
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>, orderId: string) => {
       if (!e.target.files || e.target.files.length === 0) return;
       const file = e.target.files[0];
+      
+      // Chama o ModernLoader imediatamente
       setIsUploadingPhoto(true);
       
       setTimeout(async () => {
@@ -352,12 +271,30 @@ export default function DriverInterface({ driver, orders, unassignedOrders = [],
               const compressedBase64 = await compressImageNative(file); 
               setDeliveryPhotos(prev => ({...prev, [orderId]: compressedBase64}));
               await onUpdateOrder(orderId, { photoProof: compressedBase64 });
-              alert("Foto anexada com sucesso!");
-          } catch (err) { 
-              alert("Erro ao processar imagem da entrega."); 
+          } catch (err: any) { 
+              alert("Erro ao salvar foto da entrega. Tente novamente."); 
           } finally {
               setIsUploadingPhoto(false);
-              if (photoInputRef.current) photoInputRef.current.value = '';
+              // Limpa o input DEPOIS que a foto foi processada
+              if (e.target) e.target.value = ''; 
+          }
+      }, 50);
+  };
+
+  const handleDocumentUpload = (e: React.ChangeEvent<HTMLInputElement>, fieldName: string, successMessage: string) => {
+      if (!e.target.files || e.target.files.length === 0) return;
+      const file = e.target.files[0];
+      setIsUploadingPhoto(true);
+      
+      setTimeout(async () => {
+          try { 
+              const compressedBase64 = await compressImageNative(file); 
+              await onUpdateDriver(driver.id, { [fieldName]: compressedBase64 });
+              alert(successMessage);
+          } catch (err: any) { 
+              alert("Erro ao enviar o documento. Tente tirar a foto de mais longe."); 
+          } finally {
+              setIsUploadingPhoto(false);
           }
       }, 50);
   };
@@ -468,18 +405,14 @@ export default function DriverInterface({ driver, orders, unassignedOrders = [],
   const bgMain = isDark ? "bg-[#121212]" : "bg-[#f2f2f7]"; 
   const textPrimary = isDark ? "text-white" : "text-slate-900";
   const textSecondary = isDark ? "text-[#a1a1aa]" : "text-[#71717a]";
-  
-  const glassPanel = isDark 
-      ? "bg-[#1c1c1e] border border-white/5 shadow-2xl" 
-      : "bg-white border border-black/5 shadow-2xl";
-
+  const glassPanel = isDark ? "bg-[#1c1c1e] border border-white/5 shadow-2xl" : "bg-white border border-black/5 shadow-2xl";
   const inputBg = isDark ? 'bg-black/50 border-white/10 text-white placeholder:text-slate-500' : 'bg-slate-100 border-black/10 text-slate-900 placeholder:text-slate-400';
+  const mapFilter = isDark ? 'invert(95%) hue-rotate(180deg) brightness(85%) contrast(120%) grayscale(20%) sepia(5%)' : 'contrast(1.3) brightness(0.9) saturate(1.4)'; 
 
-  const mapFilter = isDark 
-      ? 'invert(95%) hue-rotate(180deg) brightness(85%) contrast(120%) grayscale(20%) sepia(5%)' 
-      : 'contrast(1.3) brightness(0.9) saturate(1.4)'; 
-
-  const DocumentListItem = ({ label, isSent, onClick }: { label: string, isSent: boolean, onClick: () => void }) => (
+  // ✅ DOCUMENT LIST ITEM CORRIGIDO PARA USAR LABEL NATIVA
+ // ✅ 1. SUBSTITUA O DocumentListItem POR ESTE AQUI (Agora ele aceita o 'id'):
+  // ✅ 1. SUBSTITUA O DocumentListItem POR ESTE AQUI (Agora ele aceita o 'id'):
+  const DocumentListItem = ({ id, label, isSent, onChange }: { id: string, label: string, isSent: boolean, onChange: (e:any)=>void }) => (
       <div className={`flex justify-between items-center p-3 rounded-xl border ${isDark ? 'bg-black/40 border-white/5' : 'bg-slate-100 border-slate-200'}`}>
           <span className={`text-[11px] font-bold uppercase tracking-widest ${textSecondary}`}>{label}</span>
           <div className="flex items-center gap-3">
@@ -488,35 +421,38 @@ export default function DriverInterface({ driver, orders, unassignedOrders = [],
               ) : (
                   <span className="flex items-center gap-1 text-[10px] font-bold text-slate-500 bg-slate-500/10 px-2 py-1 rounded-md">Pendente</span>
               )}
-              <button onClick={onClick} className={`text-[10px] font-bold px-3 py-1.5 rounded-md transition-colors ${isDark ? 'bg-white/10 hover:bg-white/20 text-white' : 'bg-slate-300 hover:bg-slate-400 text-slate-800'}`}>
+              
+              {/* O segredo nativo: o htmlFor da label aponta para o ID do input escondido */}
+              <label htmlFor={id} className={`text-[10px] font-bold px-3 py-1.5 rounded-md transition-colors cursor-pointer ${isDark ? 'bg-white/10 hover:bg-white/20 text-white' : 'bg-slate-300 hover:bg-slate-400 text-slate-800'}`}>
                   {isSent ? 'Reenviar' : 'Enviar'}
-              </button>
+              </label>
+              <input 
+                  id={id}
+                  type="file" 
+                  accept="image/*" 
+                  className="hidden" 
+                  onChange={onChange} 
+                  onClick={(e) => (e.target as HTMLInputElement).value = ''} 
+              />
           </div>
       </div>
   );
 
+  // ✅ 2. SUBSTITUA O DocumentPanelModern POR ESTE AQUI (Agora ele envia o 'id' para cada item):
   const DocumentPanelModern = () => (
       <div className={`w-full p-5 rounded-[1.5rem] border flex flex-col gap-2 pointer-events-auto ${glassPanel}`}>
           <h3 className={`text-xs font-bold uppercase tracking-widest mb-2 ${textSecondary}`}>Meus Documentos</h3>
-          <DocumentListItem label="Selfie" isSent={!!driver.avatar} onClick={() => avatarInputRef.current?.click()} />
-          <DocumentListItem label="Doc Frente" isSent={!!(driver.documentFront || driver.documentPhoto)} onClick={() => docFrontInputRef.current?.click()} />
-          <DocumentListItem label="Doc Verso" isSent={!!driver.documentBack} onClick={() => docBackInputRef.current?.click()} />
-          
-          <input type="file" accept="image/*" capture="user" className="hidden" ref={avatarInputRef} onChange={handleAvatarUpload} />
-          <input type="file" accept="image/*" capture="environment" className="hidden" ref={docFrontInputRef} onChange={handleDocFrontUpload} />
-          <input type="file" accept="image/*" capture="environment" className="hidden" ref={docBackInputRef} onChange={handleDocBackUpload} />
+          <DocumentListItem id="doc-avatar" label="Selfie" isSent={!!driver.avatar} onChange={(e) => handleDocumentUpload(e, 'avatar', 'Selfie enviada!')} />
+          <DocumentListItem id="doc-front" label="Doc Frente" isSent={!!(driver.documentFront || driver.documentPhoto)} onChange={(e) => handleDocumentUpload(e, 'documentFront', 'Frente enviada!')} />
+          <DocumentListItem id="doc-back" label="Doc Verso" isSent={!!driver.documentBack} onChange={(e) => handleDocumentUpload(e, 'documentBack', 'Verso enviado!')} />
       </div>
   );
 
   return (
     <div className={`fixed inset-0 w-screen h-screen flex flex-col font-sans transition-colors duration-300 ${bgMain} overflow-hidden`}>
       
-      {/* NOVO MODAL DE LOADING ANIMADO (FOTOS) */}
       {isUploadingPhoto && (
-          <ModernLoader 
-             title="Enviando Foto" 
-             subtitle="Comprimindo e salvando no sistema de forma segura..." 
-          />
+          <ModernLoader title="Enviando Foto" subtitle="Comprimindo e salvando no sistema de forma segura..." />
       )}
 
       {driver.isActive === false ? (
@@ -526,11 +462,16 @@ export default function DriverInterface({ driver, orders, unassignedOrders = [],
               </div>
               <h2 className={`text-3xl font-black uppercase tracking-widest ${textPrimary}`}>Conta Suspensa</h2>
               <p className={`text-sm mt-3 mb-8 max-w-xs leading-relaxed ${textSecondary}`}>
-                  Sua conta está inativa no momento. Procure o responsável da loja para regularizar seu acesso.
+                  Sua conta está inativa no momento. Procure a loja para regularizar seu acesso.
               </p>
               
               <div className="w-full max-w-sm mb-8">
-                  <DocumentPanelModern />
+                  <div className={`w-full p-5 rounded-[1.5rem] border flex flex-col gap-2 pointer-events-auto ${glassPanel}`}>
+                      <h3 className={`text-xs font-bold uppercase tracking-widest mb-2 ${textSecondary}`}>Meus Documentos</h3>
+                      <DocumentListItem label="Selfie" isSent={!!driver.avatar} onChange={(e) => handleDocumentUpload(e, 'avatar', 'Selfie enviada!')} />
+                      <DocumentListItem label="Doc Frente" isSent={!!(driver.documentFront || driver.documentPhoto)} onChange={(e) => handleDocumentUpload(e, 'documentFront', 'Frente enviada!')} />
+                      <DocumentListItem label="Doc Verso" isSent={!!driver.documentBack} onChange={(e) => handleDocumentUpload(e, 'documentBack', 'Verso enviado!')} />
+                  </div>
               </div>
 
               <button onClick={() => setShowLogoutConfirm(true)} className="mb-10 p-4 bg-red-500/10 border border-red-500/20 text-red-500 rounded-full font-bold text-sm uppercase tracking-widest flex items-center justify-center gap-2 active:scale-95 transition-transform w-full max-w-xs">
@@ -541,11 +482,7 @@ export default function DriverInterface({ driver, orders, unassignedOrders = [],
       ) : driver.status !== 'offline' && !gpsActive && !gpsError ? (
           
           <div className="relative z-[100] flex-1 flex flex-col items-center justify-center p-6 text-center pointer-events-auto">
-              <ModernLoader 
-                  title="Buscando Satélite" 
-                  subtitle="Conectando ao GPS para iniciar a navegação..." 
-                  isFullScreen={false} 
-              />
+              <ModernLoader title="Buscando Satélite" subtitle="Conectando ao GPS para iniciar a navegação..." isFullScreen={false} />
               <button onClick={() => { onToggleStatus(); stopTracking(); }} className={`mt-12 px-6 py-3 rounded-full font-medium transition-colors ${glassPanel} ${textPrimary} hover:opacity-80`}>Cancelar e ficar Offline</button>
           </div>
 
@@ -585,9 +522,10 @@ export default function DriverInterface({ driver, orders, unassignedOrders = [],
                   
                   <div className="pt-4 px-6 pb-4 flex justify-between items-center z-10 shrink-0 pointer-events-auto">
                     <div className="flex items-center gap-3">
-                      <div className="relative cursor-pointer group" onClick={() => avatarInputRef.current?.click()}>
+                      <label className="relative cursor-pointer group">
                           <img src={driver.avatar || DEFAULT_AVATAR} className={`w-12 h-12 rounded-full object-cover shadow-lg border ${isDark ? 'border-white/10' : 'border-black/5'}`} alt="Motorista" onError={(e) => { e.currentTarget.src = DEFAULT_AVATAR; }} />
-                      </div>
+                          <input type="file" accept="image/*" capture="user" className="hidden" onChange={(e) => handleDocumentUpload(e, 'avatar', 'Selfie alterada!')} onClick={(e) => (e.target as HTMLInputElement).value = ''} />
+                      </label>
                       <div className="flex flex-col items-start gap-1">
                           <h2 className={`text-xl font-black leading-none tracking-tight drop-shadow-md ${textPrimary}`}>{driver.name || "Motorista"}</h2>
                           {driver.status !== 'offline' ? (
@@ -708,11 +646,22 @@ export default function DriverInterface({ driver, orders, unassignedOrders = [],
                                                   <button onClick={() => window.open(activeOrder.mapsLink || `http://google.com/maps?q=${encodeURIComponent(activeOrder.address)}`, '_blank')} className={`flex-1 py-3 rounded-xl font-black text-[10px] uppercase flex items-center justify-center gap-1.5 shadow-sm active:scale-95 transition-all border ${isDark ? 'bg-white/5 text-white border-white/10' : 'bg-black/5 text-black border-black/10'}`}><Map size={14}/> Mapa</button>
                                                   <button onClick={() => window.open(`https://wa.me/55${activeOrder.phone.replace(/\D/g, '')}`, '_blank')} className={`flex-1 py-3 rounded-xl font-black text-[10px] uppercase flex items-center justify-center gap-1.5 shadow-sm active:scale-95 transition-all border ${isDark ? 'bg-white/5 text-white border-white/10' : 'bg-black/5 text-black border-black/10'}`}><MessageCircle size={14}/> Chat</button>
                                                   
-                                                  {/* ✅ BOTÃO DA CÂMERA (ANEXA FOTO DA ENTREGA) */}
-                                                  <button onClick={() => photoInputRef.current?.click()} className={`flex-1 py-3 rounded-xl font-black text-[10px] uppercase flex items-center justify-center gap-1.5 shadow-sm active:scale-95 transition-all border ${deliveryPhotos[activeOrder.id] || activeOrder.photoProof ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' : (isDark ? 'bg-white/5 text-white border-white/10' : 'bg-black/5 text-black border-black/10')}`}>
-                                                      <Camera size={14}/> {deliveryPhotos[activeOrder.id] || activeOrder.photoProof ? 'Anexada' : 'Foto'}
-                                                  </button>
-                                                  <input type="file" accept="image/*" capture="environment" className="hidden" ref={photoInputRef} onChange={(e) => handlePhotoUpload(e, activeOrder.id)} />
+                                                  {/* ✅ BOTÃO DA CÂMERA (COM LABEL NATIVA) */}
+                                                  {/* ✅ BOTÃO DA CÂMERA (PADRÃO NATIVO HTML5) */}
+                                                    <label 
+                                                        htmlFor={`photo-upload-${activeOrder.id}`} 
+                                                        className={`flex-1 py-3 rounded-xl font-black text-[10px] uppercase flex items-center justify-center gap-1.5 shadow-sm active:scale-95 transition-all border cursor-pointer ${deliveryPhotos[activeOrder.id] || activeOrder.photoProof ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' : (isDark ? 'bg-white/5 text-white border-white/10' : 'bg-black/5 text-black border-black/10')}`}
+                                                    >
+                                                        <Camera size={14}/> {deliveryPhotos[activeOrder.id] || activeOrder.photoProof ? 'Anexada' : 'Foto'}
+                                                    </label>
+
+                                                    <input 
+                                                        id={`photo-upload-${activeOrder.id}`}
+                                                        type="file" 
+                                                        accept="image/*" 
+                                                        className="hidden" 
+                                                        onChange={(e) => handlePhotoUpload(e, activeOrder.id)} 
+                                                    />
                                               </div>
 
                                               <input type="text" inputMode="numeric" placeholder="SENHA DO CLIENTE" className={`w-full p-4 rounded-full font-black text-center text-sm outline-none transition-colors tracking-widest ${inputBg}`} value={clientCodes[activeOrder.id] || ''} onChange={(e) => setClientCodes(prev => ({...prev, [activeOrder.id]: e.target.value}))} />
@@ -732,7 +681,7 @@ export default function DriverInterface({ driver, orders, unassignedOrders = [],
                       </div>
                     )}
 
-                    {/* ✅ ABA HISTÓRICO (Layout Moderno e Compacto) */}
+                    {/* ✅ ABA HISTÓRICO */}
                     {activeTab === 'history' && (
                         <div className="space-y-4 pt-2 w-full max-w-md mx-auto">
                             <div className={`flex p-1.5 rounded-full border ${glassPanel}`}>
@@ -771,11 +720,10 @@ export default function DriverInterface({ driver, orders, unassignedOrders = [],
                         </div>
                     )}
 
-                    {/* ✅ ABA CARTEIRA (Layout Moderno e Compacto) */}
+                    {/* ✅ ABA CARTEIRA */}
                     {activeTab === 'wallet' && (
                       <div className="space-y-4 pt-2 w-full max-w-md mx-auto">
                          
-                         {/* Card de Saldo Moderno */}
                          <div className={`p-6 rounded-[2rem] shadow-xl border relative overflow-hidden flex flex-col justify-center items-center ${glassPanel}`} style={{ background: isDark ? 'radial-gradient(ellipse at top, rgba(59,130,246,0.15), transparent), #1c1c1e' : 'radial-gradient(ellipse at top, rgba(59,130,246,0.1), transparent), #ffffff' }}>
                             <div className="flex items-center gap-2 mb-2">
                                 <p className={`text-[10px] font-bold uppercase tracking-widest ${textSecondary}`}>Saldo a Receber</p>
@@ -788,7 +736,6 @@ export default function DriverInterface({ driver, orders, unassignedOrders = [],
                             </h3>
                          </div>
                          
-                         {/* Grid de Stats Moderno */}
                          <div className="grid grid-cols-3 gap-2">
                              <div className={`p-3 rounded-2xl border flex flex-col items-center justify-center text-center ${glassPanel}`}>
                                  <Package size={16} className={`mb-1 ${textSecondary}`} />
@@ -807,7 +754,6 @@ export default function DriverInterface({ driver, orders, unassignedOrders = [],
                              </div>
                          </div>
 
-                         {/* Lista Compacta de Finanças */}
                          <div className="space-y-2 mt-2">
                              <div className={`flex justify-between items-center p-4 rounded-xl border ${glassPanel}`}>
                                  <span className={`text-[11px] font-bold uppercase tracking-widest ${textSecondary}`}>Ganhos</span>
@@ -819,9 +765,13 @@ export default function DriverInterface({ driver, orders, unassignedOrders = [],
                              </div>
                          </div>
                          
-                         {/* Lista Compacta de Documentos */}
                          <div className="mt-6">
-                            <DocumentPanelModern />
+                            <div className={`w-full p-5 rounded-[1.5rem] border flex flex-col gap-2 pointer-events-auto ${glassPanel}`}>
+                                <h3 className={`text-xs font-bold uppercase tracking-widest mb-2 ${textSecondary}`}>Meus Documentos</h3>
+                                <DocumentListItem label="Selfie" isSent={!!driver.avatar} onChange={(e) => handleDocumentUpload(e, 'avatar', 'Selfie enviada!')} />
+                                <DocumentListItem label="Doc Frente" isSent={!!(driver.documentFront || driver.documentPhoto)} onChange={(e) => handleDocumentUpload(e, 'documentFront', 'Frente enviada!')} />
+                                <DocumentListItem label="Doc Verso" isSent={!!driver.documentBack} onChange={(e) => handleDocumentUpload(e, 'documentBack', 'Verso enviado!')} />
+                            </div>
                          </div>
 
                          <div className="h-[120px] w-full shrink-0"></div>
@@ -832,7 +782,7 @@ export default function DriverInterface({ driver, orders, unassignedOrders = [],
                   </div>
               </div>
 
-              {/* MODAIS DE AVISO (CHAMADA E FILA) NO TOPO DE TUDO */}
+              {/* MODAIS DE AVISO */}
               {driver.status !== 'offline' && hasIncoming && (
                   <div className="fixed inset-0 z-[150] bg-black/90 backdrop-blur-sm flex flex-col items-center justify-center p-6 animate-in zoom-in duration-300 pointer-events-auto">
                       <div className="w-full max-w-sm space-y-4 max-h-[90vh] overflow-y-auto no-scrollbar pb-10">
@@ -963,4 +913,3 @@ export default function DriverInterface({ driver, orders, unassignedOrders = [],
     </div>
   );
 }
-
