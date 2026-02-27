@@ -260,25 +260,28 @@ export default function DriverInterface({ driver, orders, unassignedOrders = [],
 
   // ✅ FUNÇÕES DE UPLOAD COM AVISOS E LABEL NATIVA
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>, orderId: string) => {
-      if (!e.target.files || e.target.files.length === 0) return;
-      const file = e.target.files[0];
-      
-      // Chama o ModernLoader imediatamente
+      const file = e.target.files?.[0];
+      if (!file) return;
+
       setIsUploadingPhoto(true);
       
+      // Pequena pausa para garantir que o loader apareça
       setTimeout(async () => {
           try { 
+              // Comprime a imagem da galeria (que costuma ser grande)
               const compressedBase64 = await compressImageNative(file); 
+              
               setDeliveryPhotos(prev => ({...prev, [orderId]: compressedBase64}));
               await onUpdateOrder(orderId, { photoProof: compressedBase64 });
+              
+              alert("Foto da galeria enviada com sucesso!");
           } catch (err: any) { 
-              alert("Erro ao salvar foto da entrega. Tente novamente."); 
+              alert("Erro ao processar imagem. Tente uma foto mais leve ou outra imagem."); 
           } finally {
               setIsUploadingPhoto(false);
-              // Limpa o input DEPOIS que a foto foi processada
               if (e.target) e.target.value = ''; 
           }
-      }, 50);
+      }, 100);
   };
 
   const handleDocumentUpload = (e: React.ChangeEvent<HTMLInputElement>, fieldName: string, successMessage: string) => {
@@ -648,15 +651,16 @@ export default function DriverInterface({ driver, orders, unassignedOrders = [],
                                                   
                                                   {/* ✅ BOTÃO DA CÂMERA (COM LABEL NATIVA) */}
                                                   {/* ✅ BOTÃO DA CÂMERA (PADRÃO NATIVO HTML5) */}
+                                                    {/* ✅ BOTÃO AJUSTADO PARA GALERIA */}
                                                     <label 
-                                                        htmlFor={`photo-upload-${activeOrder.id}`} 
+                                                        htmlFor={`gallery-upload-${activeOrder.id}`} 
                                                         className={`flex-1 py-3 rounded-xl font-black text-[10px] uppercase flex items-center justify-center gap-1.5 shadow-sm active:scale-95 transition-all border cursor-pointer ${deliveryPhotos[activeOrder.id] || activeOrder.photoProof ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' : (isDark ? 'bg-white/5 text-white border-white/10' : 'bg-black/5 text-black border-black/10')}`}
                                                     >
-                                                        <Camera size={14}/> {deliveryPhotos[activeOrder.id] || activeOrder.photoProof ? 'Anexada' : 'Foto'}
+                                                        <ImagePlus size={14}/> {deliveryPhotos[activeOrder.id] || activeOrder.photoProof ? 'Enviada' : 'Galeria'}
                                                     </label>
 
                                                     <input 
-                                                        id={`photo-upload-${activeOrder.id}`}
+                                                        id={`gallery-upload-${activeOrder.id}`}
                                                         type="file" 
                                                         accept="image/*" 
                                                         className="hidden" 
