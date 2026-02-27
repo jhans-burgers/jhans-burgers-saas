@@ -29,6 +29,43 @@ interface DriverAppProps {
     onUpdateDriver: (id: string, data: any) => void;
 }
 
+// ==========================================
+// COMPRESSOR DE IMAGEM NATIVO (BASE64)
+// ==========================================
+const compressImageNative = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = (event) => {
+            const img = new Image();
+            img.src = event.target?.result as string;
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                let { width, height } = img;
+                const MAX_SIZE = 800; // Reduz para um tamanho ótimo para o Firebase
+
+                if (width > height && width > MAX_SIZE) {
+                    height *= MAX_SIZE / width;
+                    width = MAX_SIZE;
+                } else if (height > MAX_SIZE) {
+                    width *= MAX_SIZE / height;
+                    height = MAX_SIZE;
+                }
+
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx?.drawImage(img, 0, 0, width, height);
+                
+                // Transforma a foto em texto JPEG com 60% de qualidade
+                resolve(canvas.toDataURL('image/jpeg', 0.6)); 
+            };
+            img.onerror = reject;
+        };
+        reader.onerror = reject;
+    });
+};
+
 const NOTIFICATION_SOUND = 'https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3'; 
 const DEFAULT_AVATAR = 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png'; 
 
@@ -245,74 +282,84 @@ export default function DriverInterface({ driver, orders, unassignedOrders = [],
       setGpsActive(false); setCurrentLocation(null);
   };
 
-  // ✅ FUNÇÕES DE UPLOAD CORRIGIDAS (Síncronas e robustas)
-  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+ // ✅ FUNÇÕES DE UPLOAD CORRIGIDAS (Com pausa para o Loading renderizar e Compressor Nativo)
+  const handleAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
       if (!e.target.files || e.target.files.length === 0) return;
       const file = e.target.files[0];
-      setIsUploadingPhoto(true);
       
-      try { 
-          const compressed = await compressImage(file); 
-          await onUpdateDriver(driver.id, { avatar: compressed }); 
-          alert("Selfie atualizada com sucesso!");
-      } catch (err: any) { 
-          alert("A imagem ficou pesada ou com erro. Tire a foto novamente."); 
-      } finally {
-          setIsUploadingPhoto(false);
-          if (avatarInputRef.current) avatarInputRef.current.value = '';
-      }
+      setIsUploadingPhoto(true); // 1. Manda mostrar a tela de loading
+      
+      // 2. Dá 50 milissegundos para o celular desenhar a tela antes de travar o processador
+      setTimeout(async () => {
+          try { 
+              const compressedBase64 = await compressImageNative(file); 
+              await onUpdateDriver(driver.id, { avatar: compressedBase64 }); 
+              alert("Selfie atualizada com sucesso!");
+          } catch (err) { 
+              alert("Erro ao processar imagem. Tente novamente."); 
+          } finally {
+              setIsUploadingPhoto(false);
+              if (avatarInputRef.current) avatarInputRef.current.value = '';
+          }
+      }, 50);
   };
 
-  const handleDocFrontUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleDocFrontUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
       if (!e.target.files || e.target.files.length === 0) return;
       const file = e.target.files[0];
       setIsUploadingPhoto(true);
       
-      try { 
-          const compressed = await compressImage(file); 
-          await onUpdateDriver(driver.id, { documentFront: compressed });
-          alert("Frente do documento enviada!");
-      } catch (err: any) { 
-          alert("A foto ficou muito pesada. Tire a foto de um pouco mais longe."); 
-      } finally {
-          setIsUploadingPhoto(false);
-          if (docFrontInputRef.current) docFrontInputRef.current.value = '';
-      }
+      setTimeout(async () => {
+          try { 
+              const compressedBase64 = await compressImageNative(file); 
+              await onUpdateDriver(driver.id, { documentFront: compressedBase64 });
+              alert("Frente do documento enviada!");
+          } catch (err) { 
+              alert("Erro ao processar a foto. Tente novamente."); 
+          } finally {
+              setIsUploadingPhoto(false);
+              if (docFrontInputRef.current) docFrontInputRef.current.value = '';
+          }
+      }, 50);
   };
 
-  const handleDocBackUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleDocBackUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
       if (!e.target.files || e.target.files.length === 0) return;
       const file = e.target.files[0];
       setIsUploadingPhoto(true);
       
-      try { 
-          const compressed = await compressImage(file); 
-          await onUpdateDriver(driver.id, { documentBack: compressed });
-          alert("Verso do documento enviado!");
-      } catch (err: any) { 
-          alert("A foto ficou muito pesada. Tire a foto de um pouco mais longe."); 
-      } finally {
-          setIsUploadingPhoto(false);
-          if (docBackInputRef.current) docBackInputRef.current.value = '';
-      }
+      setTimeout(async () => {
+          try { 
+              const compressedBase64 = await compressImageNative(file); 
+              await onUpdateDriver(driver.id, { documentBack: compressedBase64 });
+              alert("Verso do documento enviado!");
+          } catch (err) { 
+              alert("Erro ao processar a foto. Tente novamente."); 
+          } finally {
+              setIsUploadingPhoto(false);
+              if (docBackInputRef.current) docBackInputRef.current.value = '';
+          }
+      }, 50);
   };
 
-  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>, orderId: string) => {
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>, orderId: string) => {
       if (!e.target.files || e.target.files.length === 0) return;
       const file = e.target.files[0];
       setIsUploadingPhoto(true);
       
-      try { 
-          const compressed = await compressImage(file); 
-          setDeliveryPhotos(prev => ({...prev, [orderId]: compressed}));
-          await onUpdateOrder(orderId, { photoProof: compressed });
-          alert("Foto anexada com sucesso!");
-      } catch (err: any) { 
-          alert("Erro ao processar imagem da entrega."); 
-      } finally {
-          setIsUploadingPhoto(false);
-          if (photoInputRef.current) photoInputRef.current.value = '';
-      }
+      setTimeout(async () => {
+          try { 
+              const compressedBase64 = await compressImageNative(file); 
+              setDeliveryPhotos(prev => ({...prev, [orderId]: compressedBase64}));
+              await onUpdateOrder(orderId, { photoProof: compressedBase64 });
+              alert("Foto anexada com sucesso!");
+          } catch (err) { 
+              alert("Erro ao processar imagem da entrega."); 
+          } finally {
+              setIsUploadingPhoto(false);
+              if (photoInputRef.current) photoInputRef.current.value = '';
+          }
+      }, 50);
   };
 
   const handleReportIssue = (orderId: string, issue: string) => {
