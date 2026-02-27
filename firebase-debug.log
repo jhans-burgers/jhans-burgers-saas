@@ -1,0 +1,166 @@
+[debug] [2026-02-27T12:33:25.912Z] ----------------------------------------------------------------------
+[debug] [2026-02-27T12:33:25.917Z] Command:       /home/jhanhouzer/.nvm/versions/node/v24.13.1/bin/node /home/jhanhouzer/.nvm/versions/node/v24.13.1/bin/firebase emulators:start --project jhans-burgers-admin --import=./.emulator-data --export-on-exit=./.emulator-data
+[debug] [2026-02-27T12:33:25.917Z] CLI Version:   15.7.0
+[debug] [2026-02-27T12:33:25.917Z] Platform:      linux
+[debug] [2026-02-27T12:33:25.917Z] Node Version:  v24.13.1
+[debug] [2026-02-27T12:33:25.918Z] Time:          Fri Feb 27 2026 09:33:25 GMT-0300 (Horário Padrão de Brasília)
+[debug] [2026-02-27T12:33:25.918Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2026-02-27T12:33:26.868Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-27T12:33:26.868Z] > authorizing via signed-in user (jandessonmoraes@gmail.com)
+[debug] [2026-02-27T12:33:26.943Z] openjdk version "21.0.10" 2026-01-20
+
+[debug] [2026-02-27T12:33:26.944Z] OpenJDK Runtime Environment (build 21.0.10+7-Ubuntu-124.04)
+OpenJDK 64-Bit Server VM (build 21.0.10+7-Ubuntu-124.04, mixed mode, sharing)
+
+[debug] [2026-02-27T12:33:26.950Z] Parsed Java major version: 21
+[info] i  emulators: Starting emulators: auth, functions, firestore, storage, extensions {"metadata":{"emulator":{"name":"hub"},"message":"Starting emulators: auth, functions, firestore, storage, extensions"}}
+[debug] [2026-02-27T12:33:26.952Z] Checked if tokens are valid: false, expires at: 1772131570624
+[debug] [2026-02-27T12:33:26.952Z] Checked if tokens are valid: false, expires at: 1772131570624
+[debug] [2026-02-27T12:33:26.952Z] > refreshing access token with scopes: []
+[debug] [2026-02-27T12:33:26.954Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2026-02-27T12:33:26.954Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-02-27T12:33:30.744Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 200
+[debug] [2026-02-27T12:33:30.744Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-02-27T12:33:30.748Z] >>> [apiv2][query] GET https://cloudresourcemanager.googleapis.com/v1/projects/jhans-burgers-admin [none]
+[debug] [2026-02-27T12:33:35.206Z] <<< [apiv2][status] GET https://cloudresourcemanager.googleapis.com/v1/projects/jhans-burgers-admin 200
+[debug] [2026-02-27T12:33:35.206Z] <<< [apiv2][body] GET https://cloudresourcemanager.googleapis.com/v1/projects/jhans-burgers-admin {"projectNumber":"578283100820","projectId":"jhans-burgers-admin","lifecycleState":"ACTIVE","name":"jhans-burgers-admin","labels":{"firebase":"enabled","firebase-core":"disabled"},"createTime":"2026-02-11T21:53:38.388463Z"}
+[debug] [2026-02-27T12:33:35.220Z] [logging] Logging Emulator only supports listening on one address (127.0.0.1). Not listening on ::1
+[debug] [2026-02-27T12:33:35.220Z] assigned listening specs for emulators {"user":{"ui":[{"address":"127.0.0.1","family":"IPv4","port":4010}],"auth":[{"address":"127.0.0.1","family":"IPv4","port":9099}],"firestore":[{"address":"127.0.0.1","family":"IPv4","port":8080}],"firestore.websocket":[{"address":"127.0.0.1","family":"IPv4","port":9150}],"storage":[{"address":"127.0.0.1","family":"IPv4","port":9199}],"hub":[{"address":"127.0.0.1","family":"IPv4","port":4400},{"address":"::1","family":"IPv6","port":4400}],"logging":[{"address":"127.0.0.1","family":"IPv4","port":4500}]},"metadata":{"message":"assigned listening specs for emulators"}}
+[debug] [2026-02-27T12:33:35.223Z] Write emulator hub locator at /tmp/hub-jhans-burgers-admin.json
+[debug] [2026-02-27T12:33:35.228Z] [Extensions] Started Extensions emulator, this is a noop.
+[debug] [2026-02-27T12:33:35.229Z] [eventarc] Eventarc Emulator only supports listening on one address (127.0.0.1). Not listening on ::1
+[debug] [2026-02-27T12:33:35.229Z] [tasks] Cloud Tasks Emulator only supports listening on one address (127.0.0.1). Not listening on ::1
+[debug] [2026-02-27T12:33:35.229Z] late-assigned ports for functions and eventarc emulators {"user":{"ui":[{"address":"127.0.0.1","family":"IPv4","port":4010}],"auth":[{"address":"127.0.0.1","family":"IPv4","port":9099}],"firestore":[{"address":"127.0.0.1","family":"IPv4","port":8080}],"firestore.websocket":[{"address":"127.0.0.1","family":"IPv4","port":9150}],"storage":[{"address":"127.0.0.1","family":"IPv4","port":9199}],"hub":[{"address":"127.0.0.1","family":"IPv4","port":4400},{"address":"::1","family":"IPv6","port":4400}],"logging":[{"address":"127.0.0.1","family":"IPv4","port":4500}],"functions":[{"address":"127.0.0.1","family":"IPv4","port":5001}],"eventarc":[{"address":"127.0.0.1","family":"IPv4","port":9299}],"tasks":[{"address":"127.0.0.1","family":"IPv4","port":9499}]},"metadata":{"message":"late-assigned ports for functions and eventarc emulators"}}
+[warn] ⚠  functions: The following emulators are not running, calls to these services from the Functions emulator will affect production: apphosting, database, hosting, pubsub, dataconnect {"metadata":{"emulator":{"name":"functions"},"message":"The following emulators are not running, calls to these services from the Functions emulator will affect production: \u001b[1mapphosting, database, hosting, pubsub, dataconnect\u001b[22m"}}
+[debug] [2026-02-27T12:33:35.324Z] defaultcredentials: writing to file /home/jhanhouzer/.config/firebase/jandessonmoraes_gmail_com_application_default_credentials.json
+[debug] [2026-02-27T12:33:35.325Z] Setting GAC to /home/jhanhouzer/.config/firebase/jandessonmoraes_gmail_com_application_default_credentials.json {"metadata":{"emulator":{"name":"functions"},"message":"Setting GAC to /home/jhanhouzer/.config/firebase/jandessonmoraes_gmail_com_application_default_credentials.json"}}
+[debug] [2026-02-27T12:33:35.326Z] Checked if tokens are valid: true, expires at: 1772199209744
+[debug] [2026-02-27T12:33:35.326Z] Checked if tokens are valid: true, expires at: 1772199209744
+[debug] [2026-02-27T12:33:35.326Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/jhans-burgers-admin/adminSdkConfig [none]
+[debug] [2026-02-27T12:33:36.406Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/jhans-burgers-admin/adminSdkConfig 200
+[debug] [2026-02-27T12:33:36.406Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/jhans-burgers-admin/adminSdkConfig {"projectId":"jhans-burgers-admin","storageBucket":"jhans-burgers-admin.firebasestorage.app"}
+[info] i  firestore: Importing data from /home/jhanhouzer/Documentos/App.jhansDelivery/jhans-burgers-saas-dispatch-push2-updated/.emulator-data/firestore_export/firestore_export.overall_export_metadata {"metadata":{"emulator":{"name":"firestore"},"message":"Importing data from /home/jhanhouzer/Documentos/App.jhansDelivery/jhans-burgers-saas-dispatch-push2-updated/.emulator-data/firestore_export/firestore_export.overall_export_metadata"}}
+[debug] [2026-02-27T12:33:36.418Z] Ignoring unsupported arg: auto_download {"metadata":{"emulator":{"name":"firestore"},"message":"Ignoring unsupported arg: auto_download"}}
+[debug] [2026-02-27T12:33:36.418Z] Ignoring unsupported arg: single_project_mode_error {"metadata":{"emulator":{"name":"firestore"},"message":"Ignoring unsupported arg: single_project_mode_error"}}
+[debug] [2026-02-27T12:33:36.418Z] Starting Firestore Emulator with command {"binary":"java","args":["-Dgoogle.cloud_firestore.debug_log_level=FINE","-Duser.language=en","-jar","/home/jhanhouzer/.cache/firebase/emulators/cloud-firestore-emulator-v1.20.2.jar","--host","127.0.0.1","--port",8080,"--websocket_port",9150,"--project_id","jhans-burgers-admin","--seed_from_export","/home/jhanhouzer/Documentos/App.jhansDelivery/jhans-burgers-saas-dispatch-push2-updated/.emulator-data/firestore_export/firestore_export.overall_export_metadata","--rules","/home/jhanhouzer/Documentos/App.jhansDelivery/jhans-burgers-saas-dispatch-push2-updated/firestore.rules","--single_project_mode",true,"--functions_emulator","127.0.0.1:5001"],"optionalArgs":["port","webchannel_port","host","rules","websocket_port","functions_emulator","seed_from_export","project_id","single_project_mode"],"joinArgs":false,"shell":false,"port":8080} {"metadata":{"emulator":{"name":"firestore"},"message":"Starting Firestore Emulator with command {\"binary\":\"java\",\"args\":[\"-Dgoogle.cloud_firestore.debug_log_level=FINE\",\"-Duser.language=en\",\"-jar\",\"/home/jhanhouzer/.cache/firebase/emulators/cloud-firestore-emulator-v1.20.2.jar\",\"--host\",\"127.0.0.1\",\"--port\",8080,\"--websocket_port\",9150,\"--project_id\",\"jhans-burgers-admin\",\"--seed_from_export\",\"/home/jhanhouzer/Documentos/App.jhansDelivery/jhans-burgers-saas-dispatch-push2-updated/.emulator-data/firestore_export/firestore_export.overall_export_metadata\",\"--rules\",\"/home/jhanhouzer/Documentos/App.jhansDelivery/jhans-burgers-saas-dispatch-push2-updated/firestore.rules\",\"--single_project_mode\",true,\"--functions_emulator\",\"127.0.0.1:5001\"],\"optionalArgs\":[\"port\",\"webchannel_port\",\"host\",\"rules\",\"websocket_port\",\"functions_emulator\",\"seed_from_export\",\"project_id\",\"single_project_mode\"],\"joinArgs\":false,\"shell\":false,\"port\":8080}"}}
+[info] i  firestore: Firestore Emulator logging to firestore-debug.log {"metadata":{"emulator":{"name":"firestore"},"message":"Firestore Emulator logging to \u001b[1mfirestore-debug.log\u001b[22m"}}
+[debug] [2026-02-27T12:33:37.459Z] Feb 27, 2026 9:33:37 AM com.google.cloud.datastore.emulator.firestore.websocket.WebSocketServer start
+INFO: Started WebSocket server on ws://127.0.0.1:9150
+ {"metadata":{"emulator":{"name":"firestore"},"message":"Feb 27, 2026 9:33:37 AM com.google.cloud.datastore.emulator.firestore.websocket.WebSocketServer start\nINFO: Started WebSocket server on ws://127.0.0.1:9150\n"}}
+[debug] [2026-02-27T12:33:37.492Z] API endpoint: http://127.0.0.1:8080 {"metadata":{"emulator":{"name":"firestore"},"message":"API endpoint: http://127.0.0.1:8080"}}
+[debug] [2026-02-27T12:33:37.493Z] 
+If you are using a library that supports the FIRESTORE_EMULATOR_HOST environment variable, run:
+
+   export FIRESTORE_EMULATOR_HOST=127.0.0.1:8080
+
+If you are running a Firestore in Datastore Mode project, run:
+
+   export DATASTORE_EMULATOR_HOST=127.0.0.1:8080
+
+Note: Support for Datastore Mode is in preview. If you encounter any bugs please file at https://github.com/firebase/firebase-tools/issues.
+Dev App Server is now running.
+
+ {"metadata":{"emulator":{"name":"firestore"},"message":"\nIf you are using a library that supports the FIRESTORE_EMULATOR_HOST environment variable, run:\n\n   export FIRESTORE_EMULATOR_HOST=127.0.0.1:8080\n\nIf you are running a Firestore in Datastore Mode project, run:\n\n   export DATASTORE_EMULATOR_HOST=127.0.0.1:8080\n\nNote: Support for Datastore Mode is in preview. If you encounter any bugs please file at https://github.com/firebase/firebase-tools/issues.\nDev App Server is now running.\n\n"}}
+[info] ✔  firestore: Firestore Emulator UI websocket is running on 9150. {"metadata":{"emulator":{"name":"firestore"},"message":"Firestore Emulator UI websocket is running on 9150."}}
+[info] i  auth: Importing config from /home/jhanhouzer/Documentos/App.jhansDelivery/jhans-burgers-saas-dispatch-push2-updated/.emulator-data/auth_export/config.json {"metadata":{"emulator":{"name":"auth"},"message":"Importing config from /home/jhanhouzer/Documentos/App.jhansDelivery/jhans-burgers-saas-dispatch-push2-updated/.emulator-data/auth_export/config.json"}}
+[info] i  auth: Importing accounts from /home/jhanhouzer/Documentos/App.jhansDelivery/jhans-burgers-saas-dispatch-push2-updated/.emulator-data/auth_export/accounts.json {"metadata":{"emulator":{"name":"auth"},"message":"Importing accounts from /home/jhanhouzer/Documentos/App.jhansDelivery/jhans-burgers-saas-dispatch-push2-updated/.emulator-data/auth_export/accounts.json"}}
+[debug] [2026-02-27T12:33:42.822Z] Ignoring unsupported arg: port {"metadata":{"emulator":{"name":"storage"},"message":"Ignoring unsupported arg: port"}}
+[debug] [2026-02-27T12:33:43.490Z] Temp file directory for storage emulator: /tmp/firebase/storage/blobs {"metadata":{"emulator":{"name":"storage"},"message":"Temp file directory for storage emulator: /tmp/firebase/storage/blobs"}}
+[debug] [2026-02-27T12:33:43.500Z] [Extensions] Connecting Extensions emulator, this is a noop.
+[info] i  functions: Watching "/home/jhanhouzer/Documentos/App.jhansDelivery/jhans-burgers-saas-dispatch-push2-updated/functions" for Cloud Functions... {"metadata":{"emulator":{"name":"functions"},"message":"Watching \"/home/jhanhouzer/Documentos/App.jhansDelivery/jhans-burgers-saas-dispatch-push2-updated/functions\" for Cloud Functions..."}}
+[debug] [2026-02-27T12:33:43.506Z] Validating nodejs source
+[warn] ⚠  functions: package.json indicates an outdated version of firebase-functions. Please upgrade using npm install --save firebase-functions@latest in your functions directory. 
+[debug] [2026-02-27T12:33:44.307Z] > [functions] package.json contents: {
+  "name": "functions",
+  "scripts": {
+    "lint": "eslint --ext .js,.ts .",
+    "build": "tsc",
+    "build:watch": "tsc --watch",
+    "serve": "npm run build && firebase emulators:start --only functions",
+    "shell": "npm run build && firebase functions:shell",
+    "start": "npm run shell",
+    "deploy": "firebase deploy --only functions",
+    "logs": "firebase functions:log"
+  },
+  "engines": {
+    "node": "20"
+  },
+  "main": "lib/index.js",
+  "dependencies": {
+    "firebase-admin": "^13.6.1",
+    "firebase-functions": "^7.0.0",
+    "form-data": "^4.0.5",
+    "google-gax": "^5.0.6"
+  },
+  "devDependencies": {
+    "@types/form-data": "^2.2.1",
+    "@typescript-eslint/eslint-plugin": "^5.12.0",
+    "@typescript-eslint/parser": "^5.12.0",
+    "eslint": "^8.9.0",
+    "eslint-config-google": "^0.14.0",
+    "eslint-plugin-import": "^2.25.4",
+    "firebase-functions-test": "^3.4.1",
+    "typescript": "^5.7.3"
+  },
+  "private": true
+}
+[debug] [2026-02-27T12:33:44.307Z] Building nodejs source
+[debug] [2026-02-27T12:33:44.308Z] Failed to find version of module node: reached end of search path /home/jhanhouzer/Documentos/App.jhansDelivery/jhans-burgers-saas-dispatch-push2-updated/functions/node_modules
+[warn] ⚠  functions: Your requested "node" version "20" doesn't match your global version "24". Using node@24 from host. 
+[debug] [2026-02-27T12:33:44.309Z] Could not find functions.yaml. Must use http discovery
+[debug] [2026-02-27T12:33:44.311Z] Found firebase-functions binary at '/home/jhanhouzer/Documentos/App.jhansDelivery/jhans-burgers-saas-dispatch-push2-updated/functions/node_modules/.bin/firebase-functions'
+[info] Serving at port 8808
+
+[error] (node:8106) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+
+[debug] [2026-02-27T12:33:44.653Z] Got response from /__/functions.yaml {"endpoints":{"adminCreateOwnerUserAndLink":{"availableMemoryMb":null,"timeoutSeconds":null,"minInstances":null,"maxInstances":null,"ingressSettings":null,"concurrency":null,"serviceAccountEmail":null,"vpc":null,"platform":"gcfv2","labels":{},"callableTrigger":{},"entryPoint":"adminCreateOwnerUserAndLink"},"setDriverJoinCode":{"availableMemoryMb":null,"timeoutSeconds":null,"minInstances":null,"maxInstances":null,"ingressSettings":null,"concurrency":null,"serviceAccountEmail":null,"vpc":null,"platform":"gcfv2","labels":{},"callableTrigger":{},"entryPoint":"setDriverJoinCode"},"claimDriverJoin":{"availableMemoryMb":null,"timeoutSeconds":null,"minInstances":null,"maxInstances":null,"ingressSettings":null,"concurrency":null,"serviceAccountEmail":null,"vpc":null,"platform":"gcfv2","labels":{},"callableTrigger":{},"entryPoint":"claimDriverJoin"},"adminCreateDriverUserAndLink":{"availableMemoryMb":null,"timeoutSeconds":null,"minInstances":null,"maxInstances":null,"ingressSettings":null,"concurrency":null,"serviceAccountEmail":null,"vpc":null,"platform":"gcfv2","labels":{},"callableTrigger":{},"entryPoint":"adminCreateDriverUserAndLink"},"onOrderReadyDispatch":{"availableMemoryMb":null,"timeoutSeconds":null,"minInstances":null,"maxInstances":null,"ingressSettings":null,"concurrency":null,"serviceAccountEmail":null,"vpc":null,"platform":"gcfv2","labels":{},"eventTrigger":{"eventType":"google.cloud.firestore.document.v1.updated","eventFilters":{"database":"(default)","namespace":"(default)"},"eventFilterPathPatterns":{"document":"tenants/{tenantId}/orders/{orderId}"},"retry":false},"entryPoint":"onOrderReadyDispatch"},"acceptDriverOffer":{"availableMemoryMb":null,"timeoutSeconds":null,"minInstances":null,"maxInstances":null,"ingressSettings":null,"concurrency":null,"serviceAccountEmail":null,"vpc":null,"platform":"gcfv2","labels":{},"callableTrigger":{},"entryPoint":"acceptDriverOffer"}},"specVersion":"v1alpha1","requiredAPIs":[],"extensions":{}}
+[debug] [2026-02-27T12:33:48.676Z] defaultcredentials: writing to file /home/jhanhouzer/.config/firebase/jandessonmoraes_gmail_com_application_default_credentials.json
+[debug] [2026-02-27T12:33:48.676Z] Setting GAC to /home/jhanhouzer/.config/firebase/jandessonmoraes_gmail_com_application_default_credentials.json {"metadata":{"emulator":{"name":"functions"},"message":"Setting GAC to /home/jhanhouzer/.config/firebase/jandessonmoraes_gmail_com_application_default_credentials.json"}}
+[info] ✔  functions: Loaded functions definitions from source: adminCreateOwnerUserAndLink, setDriverJoinCode, claimDriverJoin, adminCreateDriverUserAndLink, onOrderReadyDispatch, acceptDriverOffer. {"metadata":{"emulator":{"name":"functions"},"message":"Loaded functions definitions from source: adminCreateOwnerUserAndLink, setDriverJoinCode, claimDriverJoin, adminCreateDriverUserAndLink, onOrderReadyDispatch, acceptDriverOffer."}}
+[info] ✔  functions[us-central1-adminCreateOwnerUserAndLink]: http function initialized (http://127.0.0.1:5001/jhans-burgers-admin/us-central1/adminCreateOwnerUserAndLink). {"metadata":{"emulator":{"name":"functions"},"message":"\u001b[1mhttp\u001b[22m function initialized (http://127.0.0.1:5001/jhans-burgers-admin/us-central1/adminCreateOwnerUserAndLink)."}}
+[info] ✔  functions[us-central1-setDriverJoinCode]: http function initialized (http://127.0.0.1:5001/jhans-burgers-admin/us-central1/setDriverJoinCode). {"metadata":{"emulator":{"name":"functions"},"message":"\u001b[1mhttp\u001b[22m function initialized (http://127.0.0.1:5001/jhans-burgers-admin/us-central1/setDriverJoinCode)."}}
+[info] ✔  functions[us-central1-claimDriverJoin]: http function initialized (http://127.0.0.1:5001/jhans-burgers-admin/us-central1/claimDriverJoin). {"metadata":{"emulator":{"name":"functions"},"message":"\u001b[1mhttp\u001b[22m function initialized (http://127.0.0.1:5001/jhans-burgers-admin/us-central1/claimDriverJoin)."}}
+[info] ✔  functions[us-central1-adminCreateDriverUserAndLink]: http function initialized (http://127.0.0.1:5001/jhans-burgers-admin/us-central1/adminCreateDriverUserAndLink). {"metadata":{"emulator":{"name":"functions"},"message":"\u001b[1mhttp\u001b[22m function initialized (http://127.0.0.1:5001/jhans-burgers-admin/us-central1/adminCreateDriverUserAndLink)."}}
+[debug] [2026-02-27T12:33:48.681Z] Found a v2 firestore trigger.
+[debug] [2026-02-27T12:33:48.682Z] addFirestoreTrigger "{\"eventType\":\"google.cloud.firestore.document.v1.updated\",\"database\":\"(default)\",\"namespace\":\"(default)\",\"document\":{\"value\":\"tenants/{tenantId}/orders/{orderId}\",\"matchType\":\"PATH_PATTERN\"}}"
+[debug] [2026-02-27T12:33:48.682Z] >>> [apiv2][query] POST http://127.0.0.1:8080/emulator/v1/projects/jhans-burgers-admin/eventarcTrigger?eventarcTriggerId=us-central1-onOrderReadyDispatch-0 [none]
+[debug] [2026-02-27T12:33:48.682Z] >>> [apiv2][body] POST http://127.0.0.1:8080/emulator/v1/projects/jhans-burgers-admin/eventarcTrigger?eventarcTriggerId=us-central1-onOrderReadyDispatch-0 "{\"eventType\":\"google.cloud.firestore.document.v1.updated\",\"database\":\"(default)\",\"namespace\":\"(default)\",\"document\":{\"value\":\"tenants/{tenantId}/orders/{orderId}\",\"matchType\":\"PATH_PATTERN\"}}"
+[debug] [2026-02-27T12:33:48.690Z] Feb 27, 2026 9:33:48 AM io.gapi.emulators.netty.HttpVersionRoutingHandler channelRead
+INFO: Detected non-HTTP/2 connection.
+ {"metadata":{"emulator":{"name":"firestore"},"message":"Feb 27, 2026 9:33:48 AM io.gapi.emulators.netty.HttpVersionRoutingHandler channelRead\nINFO: Detected non-HTTP/2 connection.\n"}}
+[debug] [2026-02-27T12:33:48.828Z] Feb 27, 2026 9:33:48 AM io.gapi.emulators.netty.HttpVersionRoutingHandler channelRead
+INFO: Detected HTTP/2 connection.
+ {"metadata":{"emulator":{"name":"firestore"},"message":"Feb 27, 2026 9:33:48 AM io.gapi.emulators.netty.HttpVersionRoutingHandler channelRead\nINFO: Detected HTTP/2 connection.\n"}}
+[debug] [2026-02-27T12:33:49.675Z] <<< [apiv2][status] POST http://127.0.0.1:8080/emulator/v1/projects/jhans-burgers-admin/eventarcTrigger?eventarcTriggerId=us-central1-onOrderReadyDispatch-0 200
+[debug] [2026-02-27T12:33:49.676Z] <<< [apiv2][body] POST http://127.0.0.1:8080/emulator/v1/projects/jhans-burgers-admin/eventarcTrigger?eventarcTriggerId=us-central1-onOrderReadyDispatch-0 {"eventType":"google.cloud.firestore.document.v1.updated","database":"(default)","namespace":"(default)","document":{"value":"tenants/{tenantId}/orders/{orderId}","matchType":"PATH_PATTERN"}}
+[info] ✔  functions[us-central1-onOrderReadyDispatch]: firestore function initialized. {"metadata":{"emulator":{"name":"functions"},"message":"\u001b[1mfirestore\u001b[22m function initialized."}}
+[info] ✔  functions[us-central1-acceptDriverOffer]: http function initialized (http://127.0.0.1:5001/jhans-burgers-admin/us-central1/acceptDriverOffer). {"metadata":{"emulator":{"name":"functions"},"message":"\u001b[1mhttp\u001b[22m function initialized (http://127.0.0.1:5001/jhans-burgers-admin/us-central1/acceptDriverOffer)."}}
+[debug] [2026-02-27T12:33:49.679Z] Could not find VSCode notification endpoint: FetchError: request to http://localhost:40001/vscode/notify failed, reason: connect ECONNREFUSED 127.0.0.1:40001. If you are not running the Firebase Data Connect VSCode extension, this is expected and not an issue.
+[info] 
+┌─────────────────────────────────────────────────────────────┐
+│ ✔  All emulators ready! It is now safe to connect your app. │
+│ i  View Emulator UI at http://127.0.0.1:4010/               │
+└─────────────────────────────────────────────────────────────┘
+
+┌────────────────┬────────────────┬──────────────────────────────────┐
+│ Emulator       │ Host:Port      │ View in Emulator UI              │
+├────────────────┼────────────────┼──────────────────────────────────┤
+│ Authentication │ 127.0.0.1:9099 │ http://127.0.0.1:4010/auth       │
+├────────────────┼────────────────┼──────────────────────────────────┤
+│ Functions      │ 127.0.0.1:5001 │ http://127.0.0.1:4010/functions  │
+├────────────────┼────────────────┼──────────────────────────────────┤
+│ Firestore      │ 127.0.0.1:8080 │ http://127.0.0.1:4010/firestore  │
+├────────────────┼────────────────┼──────────────────────────────────┤
+│ Storage        │ 127.0.0.1:9199 │ http://127.0.0.1:4010/storage    │
+├────────────────┼────────────────┼──────────────────────────────────┤
+│ Extensions     │ 127.0.0.1:5001 │ http://127.0.0.1:4010/extensions │
+└────────────────┴────────────────┴──────────────────────────────────┘
+  Emulator Hub host: 127.0.0.1 port: 4400
+  Other reserved ports: 4500, 9150
+┌─────────────────────────┬───────────────┬─────────────────────┐
+│ Extension Instance Name │ Extension Ref │ View in Emulator UI │
+└─────────────────────────┴───────────────┴─────────────────────┘
+Issues? Report them at https://github.com/firebase/firebase-tools/issues and attach the *-debug.log files.
+ 

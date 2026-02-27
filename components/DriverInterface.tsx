@@ -103,6 +103,47 @@ const SwipeButton = ({ text, onConfirm, colorClass, icon: Icon }: any) => {
     );
 };
 
+// =================================================================================
+// ✅ NOVO COMPONENTE: MODAL DE CARREGAMENTO ANIMADO (MODERN LOADER)
+// =================================================================================
+const ModernLoader = ({ title = "Processando", subtitle = "Por favor, aguarde um momento...", isFullScreen = true }) => {
+    const content = (
+        <div className="flex flex-col items-center justify-center text-center">
+            {/* Container da Animação */}
+            <div className="relative flex items-center justify-center w-28 h-28 mb-8">
+                {/* Anel Externo Girando (Azul Neon) */}
+                <div className="absolute inset-0 rounded-full border-t-[4px] border-b-[4px] border-[#3b82f6] animate-[spin_1.5s_linear_infinite] shadow-[0_0_20px_rgba(59,130,246,0.6)]"></div>
+                
+                {/* Anel Interno Girando ao Contrário (Esmeralda) */}
+                <div className="absolute inset-3 rounded-full border-l-[4px] border-r-[4px] border-[#34d399] animate-[spin_1s_linear_infinite_reverse] shadow-[0_0_15px_rgba(52,211,153,0.4)]"></div>
+                
+                {/* Ícone Central Pulsando */}
+                <div className="bg-slate-900 rounded-full p-4 animate-pulse">
+                    <Package className="text-white" size={32} strokeWidth={1.5} />
+                </div>
+            </div>
+
+            {/* Textos */}
+            <h2 className="text-2xl font-black text-white uppercase tracking-[0.15em] drop-shadow-lg">
+                {title}
+            </h2>
+            <p className="text-slate-400 text-sm mt-3 px-8 font-medium max-w-xs">
+                {subtitle}
+            </p>
+        </div>
+    );
+
+    if (isFullScreen) {
+        return (
+            <div className="fixed inset-0 z-[9999] bg-black/90 backdrop-blur-md flex items-center justify-center pointer-events-auto animate-in fade-in zoom-in duration-300">
+                {content}
+            </div>
+        );
+    }
+
+    return content;
+};
+
 export default function DriverInterface({ driver, orders, unassignedOrders = [], offers = [], vales = [], onToggleStatus, onAcceptOrder, onAcceptOffer, onPickupOrder, onCompleteOrder, onUpdateOrder, onDeleteOrder, onLogout, onUpdateDriver }: DriverAppProps) {
   
   const [isDark, setIsDark] = useState(() => localStorage.getItem('driverTheme') !== 'light');
@@ -125,9 +166,7 @@ export default function DriverInterface({ driver, orders, unassignedOrders = [],
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   
-  // ✅ ESTADO PARA MOSTRAR/OCULTAR VALORES NO APP
   const [showValues, setShowValues] = useState(false);
-  
   const [isMutedTemporary, setIsMutedTemporary] = useState(false);
   const [currentLocation, setCurrentLocation] = useState<{lat: number, lng: number, speed: number, heading: number} | null>(null);
   const [displayLocation, setDisplayLocation] = useState<{lat: number, lng: number} | null>(null);
@@ -206,80 +245,73 @@ export default function DriverInterface({ driver, orders, unassignedOrders = [],
       setGpsActive(false); setCurrentLocation(null);
   };
 
-  const handleAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-      if (e.target.files && e.target.files[0]) {
-          const file = e.target.files[0];
-          setIsUploadingPhoto(true);
-          setTimeout(async () => {
-              try { 
-                  const compressed = await compressImage(file); 
-                  await onUpdateDriver(driver.id, { avatar: compressed }); 
-                  alert("Selfie atualizada com sucesso!");
-              } catch (err: any) { 
-                  alert("A imagem ficou pesada ou com erro. Tire a foto novamente."); 
-              } finally {
-                  setIsUploadingPhoto(false);
-                  if (avatarInputRef.current) avatarInputRef.current.value = '';
-              }
-          }, 150);
+  // ✅ FUNÇÕES DE UPLOAD CORRIGIDAS (Síncronas e robustas)
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+      if (!e.target.files || e.target.files.length === 0) return;
+      const file = e.target.files[0];
+      setIsUploadingPhoto(true);
+      
+      try { 
+          const compressed = await compressImage(file); 
+          await onUpdateDriver(driver.id, { avatar: compressed }); 
+          alert("Selfie atualizada com sucesso!");
+      } catch (err: any) { 
+          alert("A imagem ficou pesada ou com erro. Tire a foto novamente."); 
+      } finally {
+          setIsUploadingPhoto(false);
+          if (avatarInputRef.current) avatarInputRef.current.value = '';
       }
   };
 
-  const handleDocFrontUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-      if (e.target.files && e.target.files[0]) {
-          const file = e.target.files[0];
-          setIsUploadingPhoto(true);
-          setTimeout(async () => {
-              try { 
-                  const compressed = await compressImage(file); 
-                  await onUpdateDriver(driver.id, { documentFront: compressed });
-                  alert("Frente do documento enviada!");
-              } catch (err: any) { 
-                  alert("A foto ficou muito pesada. Tire a foto de um pouco mais longe."); 
-              } finally {
-                  setIsUploadingPhoto(false);
-                  if (docFrontInputRef.current) docFrontInputRef.current.value = '';
-              }
-          }, 150);
+  const handleDocFrontUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+      if (!e.target.files || e.target.files.length === 0) return;
+      const file = e.target.files[0];
+      setIsUploadingPhoto(true);
+      
+      try { 
+          const compressed = await compressImage(file); 
+          await onUpdateDriver(driver.id, { documentFront: compressed });
+          alert("Frente do documento enviada!");
+      } catch (err: any) { 
+          alert("A foto ficou muito pesada. Tire a foto de um pouco mais longe."); 
+      } finally {
+          setIsUploadingPhoto(false);
+          if (docFrontInputRef.current) docFrontInputRef.current.value = '';
       }
   };
 
-  const handleDocBackUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-      if (e.target.files && e.target.files[0]) {
-          const file = e.target.files[0];
-          setIsUploadingPhoto(true);
-          setTimeout(async () => {
-              try { 
-                  const compressed = await compressImage(file); 
-                  await onUpdateDriver(driver.id, { documentBack: compressed });
-                  alert("Verso do documento enviado!");
-              } catch (err: any) { 
-                  alert("A foto ficou muito pesada. Tire a foto de um pouco mais longe."); 
-              } finally {
-                  setIsUploadingPhoto(false);
-                  if (docBackInputRef.current) docBackInputRef.current.value = '';
-              }
-          }, 150);
+  const handleDocBackUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+      if (!e.target.files || e.target.files.length === 0) return;
+      const file = e.target.files[0];
+      setIsUploadingPhoto(true);
+      
+      try { 
+          const compressed = await compressImage(file); 
+          await onUpdateDriver(driver.id, { documentBack: compressed });
+          alert("Verso do documento enviado!");
+      } catch (err: any) { 
+          alert("A foto ficou muito pesada. Tire a foto de um pouco mais longe."); 
+      } finally {
+          setIsUploadingPhoto(false);
+          if (docBackInputRef.current) docBackInputRef.current.value = '';
       }
   };
 
-  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>, orderId: string) => {
-      if (e.target.files && e.target.files[0]) {
-          const file = e.target.files[0];
-          setIsUploadingPhoto(true);
-          setTimeout(async () => {
-              try { 
-                  const compressed = await compressImage(file); 
-                  setDeliveryPhotos(prev => ({...prev, [orderId]: compressed}));
-                  await onUpdateOrder(orderId, { photoProof: compressed });
-                  alert("Foto anexada com sucesso!");
-              } catch (err: any) { 
-                  alert("Erro ao processar imagem da entrega."); 
-              } finally {
-                  setIsUploadingPhoto(false);
-                  if (photoInputRef.current) photoInputRef.current.value = '';
-              }
-          }, 150);
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>, orderId: string) => {
+      if (!e.target.files || e.target.files.length === 0) return;
+      const file = e.target.files[0];
+      setIsUploadingPhoto(true);
+      
+      try { 
+          const compressed = await compressImage(file); 
+          setDeliveryPhotos(prev => ({...prev, [orderId]: compressed}));
+          await onUpdateOrder(orderId, { photoProof: compressed });
+          alert("Foto anexada com sucesso!");
+      } catch (err: any) { 
+          alert("Erro ao processar imagem da entrega."); 
+      } finally {
+          setIsUploadingPhoto(false);
+          if (photoInputRef.current) photoInputRef.current.value = '';
       }
   };
 
@@ -400,9 +432,6 @@ export default function DriverInterface({ driver, orders, unassignedOrders = [],
       ? 'invert(95%) hue-rotate(180deg) brightness(85%) contrast(120%) grayscale(20%) sepia(5%)' 
       : 'contrast(1.3) brightness(0.9) saturate(1.4)'; 
 
-  // =================================================================================
-  // ✅ COMPONENTE INTERNO: ITEM DA LISTA DE DOCUMENTOS (Layout Moderno)
-  // =================================================================================
   const DocumentListItem = ({ label, isSent, onClick }: { label: string, isSent: boolean, onClick: () => void }) => (
       <div className={`flex justify-between items-center p-3 rounded-xl border ${isDark ? 'bg-black/40 border-white/5' : 'bg-slate-100 border-slate-200'}`}>
           <span className={`text-[11px] font-bold uppercase tracking-widest ${textSecondary}`}>{label}</span>
@@ -435,16 +464,15 @@ export default function DriverInterface({ driver, orders, unassignedOrders = [],
   return (
     <div className={`fixed inset-0 w-screen h-screen flex flex-col font-sans transition-colors duration-300 ${bgMain} overflow-hidden`}>
       
+      {/* NOVO MODAL DE LOADING ANIMADO (FOTOS) */}
       {isUploadingPhoto && (
-          <div className="fixed inset-0 z-[9999] bg-black/90 backdrop-blur-md flex flex-col items-center justify-center pointer-events-auto">
-              <RefreshCw className="animate-spin text-[#3b82f6] mb-5" size={56}/>
-              <h2 className="text-2xl font-black text-white uppercase tracking-widest text-center">Enviando Imagem</h2>
-              <p className="text-slate-400 text-sm mt-3 text-center px-8">Processando e salvando no sistema.<br/>Por favor, aguarde.</p>
-          </div>
+          <ModernLoader 
+             title="Enviando Foto" 
+             subtitle="Comprimindo e salvando no sistema de forma segura..." 
+          />
       )}
 
       {driver.isActive === false ? (
-          
           <div className="relative z-[500] flex-1 flex flex-col items-center justify-center p-6 text-center overflow-y-auto w-full h-full pointer-events-auto">
               <div className="w-24 h-24 bg-red-500/10 border-2 border-red-500/20 rounded-full flex items-center justify-center mb-6 animate-pulse mt-10">
                   <Ban className="text-red-500" size={48}/>
@@ -461,31 +489,17 @@ export default function DriverInterface({ driver, orders, unassignedOrders = [],
               <button onClick={() => setShowLogoutConfirm(true)} className="mb-10 p-4 bg-red-500/10 border border-red-500/20 text-red-500 rounded-full font-bold text-sm uppercase tracking-widest flex items-center justify-center gap-2 active:scale-95 transition-transform w-full max-w-xs">
                   <LogOut size={18}/> Sair do Aplicativo
               </button>
-
-              {showLogoutConfirm && (
-                  <div className="fixed inset-0 z-[1000] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in">
-                      <div className={`w-full max-w-sm rounded-3xl p-6 shadow-2xl text-center border ${isDark ? 'bg-[#1c1c1e] border-white/10' : 'bg-white border-slate-200'}`}>
-                          <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                              <LogOut size={32} className="text-red-500" />
-                          </div>
-                          <h2 className={`text-xl font-bold mb-2 ${textPrimary}`}>Sair do Aplicativo?</h2>
-                          <p className={`text-sm mb-6 ${textSecondary}`}>Tem certeza que deseja desconectar da sua conta?</p>
-                          <div className="flex w-full gap-3">
-                              <button onClick={() => setShowLogoutConfirm(false)} className={`flex-1 font-bold py-3.5 rounded-xl transition-colors ${isDark ? 'bg-white/5 hover:bg-white/10 text-white' : 'bg-slate-100 hover:bg-slate-200 text-slate-700'}`}>Cancelar</button>
-                              <button onClick={() => { setShowLogoutConfirm(false); onLogout(); }} className="flex-1 bg-red-600 hover:bg-red-500 text-white font-bold py-3.5 rounded-xl transition-colors shadow-lg shadow-red-600/20">Sim, Sair</button>
-                          </div>
-                      </div>
-                  </div>
-              )}
           </div>
 
       ) : driver.status !== 'offline' && !gpsActive && !gpsError ? (
           
           <div className="relative z-[100] flex-1 flex flex-col items-center justify-center p-6 text-center pointer-events-auto">
-              <RefreshCw className="animate-spin text-[#3b82f6] mb-4" size={48}/>
-              <h2 className={`text-xl font-semibold ${textPrimary}`}>Conectando ao Satélite...</h2>
-              <p className={`text-sm mt-2 ${textSecondary}`}>Buscando sinal GPS para navegação.</p>
-              <button onClick={() => { onToggleStatus(); stopTracking(); }} className={`mt-8 px-6 py-3 rounded-full font-medium transition-colors ${glassPanel} ${textPrimary} hover:opacity-80`}>Cancelar e ficar Offline</button>
+              <ModernLoader 
+                  title="Buscando Satélite" 
+                  subtitle="Conectando ao GPS para iniciar a navegação..." 
+                  isFullScreen={false} 
+              />
+              <button onClick={() => { onToggleStatus(); stopTracking(); }} className={`mt-12 px-6 py-3 rounded-full font-medium transition-colors ${glassPanel} ${textPrimary} hover:opacity-80`}>Cancelar e ficar Offline</button>
           </div>
 
       ) : (
@@ -902,3 +916,4 @@ export default function DriverInterface({ driver, orders, unassignedOrders = [],
     </div>
   );
 }
+

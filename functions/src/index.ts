@@ -365,32 +365,6 @@ const SUPER_ADMINS = new Set<string>([
   "Bz6OvZ0e58jSX6aPpyc6WPVj4QQe", 
 ]);
 
-// ✅ Email(s) do master (SÓ para DEV no emulator — não precisa ficar trocando UID)
-const SUPER_ADMIN_EMAILS = new Set<string>([
-  "jandessonmoraes@gmail.com",
-]);
-
-function isDevEmulator() {
-  return process.env.FUNCTIONS_EMULATOR === "true";
-}
-
-function assertMaster(request: Parameters<typeof onCall>[0] extends never ? any : any) {
-  if (!request.auth?.uid) {
-    throw new HttpsError("unauthenticated", "Você precisa estar logado.");
-  }
-
-  const uid = request.auth.uid;
-  const email = (request.auth.token?.email as string | undefined)?.toLowerCase();
-
-  const allowed =
-    SUPER_ADMINS.has(uid) ||
-    (isDevEmulator() && email && SUPER_ADMIN_EMAILS.has(email));
-
-  if (!allowed) {
-    throw new HttpsError("permission-denied", "Acesso negado.");
-  }
-}
-
 // ===================== ADMIN: Create Owner User + Link =====================
 
 export const adminCreateOwnerUserAndLink = onCall(async (request) => {
