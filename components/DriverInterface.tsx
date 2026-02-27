@@ -8,8 +8,6 @@ import {
 } from 'lucide-react';
 import { Driver, Order, Vale, DriverOffer } from '../types';
 import { isToday, formatTime, formatCurrency, formatOrderId } from '../utils';
-import { Footer } from './Shared';
-import { EditOrderModal, GenericConfirmModal } from './Modals';
 import { serverTimestamp } from 'firebase/firestore';
 
 interface DriverAppProps {
@@ -31,12 +29,8 @@ interface DriverAppProps {
 
 const NOTIFICATION_SOUND = 'https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3'; 
 const DEFAULT_AVATAR = 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png'; 
-
 const GPS_CONFIG = { MIN_DISTANCE_METERS: 0, MIN_TIME_MS: 1000, MAX_AGE_MS: 5000, TIMEOUT_MS: 10000 };
 
-// ==========================================
-// COMPRESSOR DE IMAGEM NATIVO (BASE64)
-// ==========================================
 const compressImageNative = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -47,18 +41,10 @@ const compressImageNative = (file: File): Promise<string> => {
             img.onload = () => {
                 const canvas = document.createElement('canvas');
                 let { width, height } = img;
-                const MAX_SIZE = 800; // Tamanho ideal para o Firebase
-
-                if (width > height && width > MAX_SIZE) {
-                    height *= MAX_SIZE / width;
-                    width = MAX_SIZE;
-                } else if (height > MAX_SIZE) {
-                    width *= MAX_SIZE / height;
-                    height = MAX_SIZE;
-                }
-
-                canvas.width = width;
-                canvas.height = height;
+                const MAX_SIZE = 800;
+                if (width > height && width > MAX_SIZE) { height *= MAX_SIZE / width; width = MAX_SIZE; }
+                else if (height > MAX_SIZE) { width *= MAX_SIZE / height; height = MAX_SIZE; }
+                canvas.width = width; canvas.height = height;
                 const ctx = canvas.getContext('2d');
                 ctx?.drawImage(img, 0, 0, width, height);
                 resolve(canvas.toDataURL('image/jpeg', 0.6)); 
@@ -71,18 +57,10 @@ const compressImageNative = (file: File): Promise<string> => {
 
 const getDistance = (lat1: number, lng1: number, lat2: number, lng2: number) => {
     const R = 6371e3; 
-    const φ1 = lat1 * Math.PI/180;
-    const φ2 = lat2 * Math.PI/180;
-    const Δφ = (lat2-lat1) * Math.PI/180;
-    const Δλ = (lng2-lng1) * Math.PI/180;
+    const φ1 = lat1 * Math.PI/180; const φ2 = lat2 * Math.PI/180;
+    const Δφ = (lat2-lat1) * Math.PI/180; const Δλ = (lng2-lng1) * Math.PI/180;
     const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ/2) * Math.sin(Δλ/2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-    return R * c;
-};
-
-const getCardinalDirection = (angle: number) => {
-    const directions = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
-    return directions[Math.round(angle / 45) % 8];
+    return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
 };
 
 const SwipeButton = ({ text, onConfirm, colorClass, icon: Icon }: any) => {
@@ -90,7 +68,6 @@ const SwipeButton = ({ text, onConfirm, colorClass, icon: Icon }: any) => {
     const [isDragging, setIsDragging] = useState(false);
     const containerRef = useRef<HTMLDivElement>(null);
     const sliderRef = useRef<HTMLDivElement>(null);
-
     const handleStart = () => setIsDragging(true);
     const handleMove = (clientX: number) => {
         if (!isDragging || !containerRef.current || !sliderRef.current) return;
@@ -99,821 +76,228 @@ const SwipeButton = ({ text, onConfirm, colorClass, icon: Icon }: any) => {
         let walk = clientX - containerRect.left - (sliderRef.current.getBoundingClientRect().width / 2);
         walk = Math.max(0, Math.min(walk, maxWalk));
         setSliderX(walk);
-
-        if (walk >= maxWalk * 0.95) {
-            setIsDragging(false);
-            setSliderX(maxWalk);
-            onConfirm();
-        }
+        if (walk >= maxWalk * 0.95) { setIsDragging(false); setSliderX(maxWalk); onConfirm(); }
     };
-    const handleEnd = () => {
-        if (!isDragging) return;
-        setIsDragging(false);
-        setSliderX(0); 
-    };
-
+    const handleEnd = () => { setIsDragging(false); setSliderX(0); };
     return (
-        <div 
-            ref={containerRef}
-            className={`relative w-full h-14 rounded-full overflow-hidden flex items-center shadow-lg select-none ${colorClass}`}
-            onMouseLeave={handleEnd}
-            onMouseUp={handleEnd}
-            onMouseMove={(e) => handleMove(e.clientX)}
-            onTouchMove={(e) => handleMove(e.touches[0].clientX)}
-            onTouchEnd={handleEnd}
-        >
-            <div className="absolute w-full text-center font-black text-xs uppercase tracking-widest pointer-events-none opacity-90">
-                {text}
-            </div>
-            <div 
-                ref={sliderRef}
-                className="absolute left-1.5 h-11 w-16 bg-white rounded-full flex items-center justify-center shadow-md cursor-grab active:cursor-grabbing transition-transform"
-                style={{ transform: `translateX(${sliderX}px)`, transition: isDragging ? 'none' : 'transform 0.3s ease-out' }}
-                onMouseDown={handleStart}
-                onTouchStart={handleStart}
-            >
+        <div ref={containerRef} className={`relative w-full h-14 rounded-full overflow-hidden flex items-center shadow-lg select-none ${colorClass}`} onMouseLeave={handleEnd} onMouseUp={handleEnd} onMouseMove={(e) => handleMove(e.clientX)} onTouchMove={(e) => handleMove(e.touches[0].clientX)} onTouchEnd={handleEnd}>
+            <div className="absolute w-full text-center font-black text-[10px] uppercase tracking-widest pointer-events-none opacity-90">{text}</div>
+            <div ref={sliderRef} className="absolute left-1.5 h-11 w-16 bg-white rounded-full flex items-center justify-center shadow-md cursor-grab active:cursor-grabbing transition-transform" style={{ transform: `translateX(${sliderX}px)`, transition: isDragging ? 'none' : 'transform 0.3s ease-out' }} onMouseDown={handleStart} onTouchStart={handleStart}>
                 {Icon ? <Icon size={20} className="text-slate-800" /> : <ChevronRight size={24} className="text-slate-800" strokeWidth={3} />}
             </div>
         </div>
     );
 };
 
-const ModernLoader = ({ title = "Processando", subtitle = "Por favor, aguarde um momento...", isFullScreen = true }) => {
+const ModernLoader = ({ title = "Processando", subtitle = "Aguarde...", isFullScreen = true }) => {
     const content = (
         <div className="flex flex-col items-center justify-center text-center">
             <div className="relative flex items-center justify-center w-28 h-28 mb-8">
                 <div className="absolute inset-0 rounded-full border-t-[4px] border-b-[4px] border-[#3b82f6] animate-[spin_1.5s_linear_infinite] shadow-[0_0_20px_rgba(59,130,246,0.6)]"></div>
-                <div className="absolute inset-3 rounded-full border-l-[4px] border-r-[4px] border-[#34d399] animate-[spin_1s_linear_infinite_reverse] shadow-[0_0_15px_rgba(52,211,153,0.4)]"></div>
-                <div className="bg-slate-900 rounded-full p-4 animate-pulse">
-                    <Package className="text-white" size={32} strokeWidth={1.5} />
-                </div>
+                <div className="bg-slate-900 rounded-full p-4 animate-pulse"><Package className="text-white" size={32} /></div>
             </div>
-            <h2 className="text-2xl font-black text-white uppercase tracking-[0.15em] drop-shadow-lg">{title}</h2>
-            <p className="text-slate-400 text-sm mt-3 px-8 font-medium max-w-xs">{subtitle}</p>
+            <h2 className="text-xl font-black text-white uppercase tracking-widest">{title}</h2>
+            <p className="text-slate-400 text-xs mt-3 px-8">{subtitle}</p>
         </div>
     );
-
-    if (isFullScreen) {
-        return (
-            <div className="fixed inset-0 z-[9999] bg-black/90 backdrop-blur-md flex items-center justify-center pointer-events-auto animate-in fade-in zoom-in duration-300">
-                {content}
-            </div>
-        );
-    }
-    return content;
+    return isFullScreen ? <div className="fixed inset-0 z-[9999] bg-black/90 backdrop-blur-md flex items-center justify-center">{content}</div> : content;
 };
 
 export default function DriverInterface({ driver, orders, unassignedOrders = [], offers = [], vales = [], onToggleStatus, onAcceptOrder, onAcceptOffer, onPickupOrder, onCompleteOrder, onUpdateOrder, onDeleteOrder, onLogout, onUpdateDriver }: DriverAppProps) {
-  
   const [isDark, setIsDark] = useState(() => localStorage.getItem('driverTheme') !== 'light');
   const toggleTheme = () => setIsDark(prev => { const next = !prev; localStorage.setItem('driverTheme', next ? 'dark' : 'light'); return next; });
 
   const [activeTab, setActiveTab] = useState<'home' | 'history' | 'wallet'>('home');
-  const [historyFilter, setHistoryFilter] = useState<'today' | 'all'>('today');
-  const [visibleItems, setVisibleItems] = useState(20);
-  const [editingOrder, setEditingOrder] = useState<Order | null>(null);
-  
-  const [storeCodes, setStoreCodes] = useState<{[key: string]: string}>({});
-  const [clientCodes, setClientCodes] = useState<{[key: string]: string}>({});
   const [deliveryPhotos, setDeliveryPhotos] = useState<{[key: string]: string}>({});
-  const [showSOSModal, setShowSOSModal] = useState<string | null>(null);
-
   const [gpsActive, setGpsActive] = useState(false);
-  const [gpsError, setGpsError] = useState('');
-  const [isSending, setIsSending] = useState(false);
-  
-  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
-  
-  const [showValues, setShowValues] = useState(false);
-  const [isMutedTemporary, setIsMutedTemporary] = useState(false);
-  const [currentLocation, setCurrentLocation] = useState<{lat: number, lng: number, speed: number, heading: number} | null>(null);
   const [displayLocation, setDisplayLocation] = useState<{lat: number, lng: number} | null>(null);
+  const [currentLocation, setCurrentLocation] = useState<{lat: number, lng: number, heading: number} | null>(null);
 
-  const [now, setNow] = useState(Date.now());
-  useEffect(() => { const timer = setInterval(() => setNow(Date.now()), 5000); return () => clearInterval(timer); }, []);
-
-  const wakeLockRef = useRef<any>(null);
   const watchIdRef = useRef<number | null>(null);
-  const lastPositionRef = useRef<{lat: number, lng: number, time: number} | null>(null);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  const stopNotificationSound = () => { if (audioRef.current) { audioRef.current.pause(); audioRef.current.currentTime = 0; } };
-
-  const handleAcceptOrderWithMute = (orderId: string) => {
-      setIsMutedTemporary(true); stopNotificationSound(); onAcceptOrder(orderId);
-      setTimeout(() => setIsMutedTemporary(false), 2000);
-  };
-
-  const handleAcceptOfferWithMute = (orderId: string) => {
-      setIsMutedTemporary(true); stopNotificationSound(); if(onAcceptOffer) onAcceptOffer(orderId);
-      setTimeout(() => setIsMutedTemporary(false), 2000);
-  };
-
-  const keepScreenOn = async () => {
-      if ('wakeLock' in navigator) { try { wakeLockRef.current = await (navigator as any).wakeLock.request('screen'); } catch (err: any) {} }
-  };
-
-  const processPosition = async (position: GeolocationPosition) => {
-      const { latitude, longitude, speed, heading } = position.coords;
-      const currentTime = Date.now();
-      let shouldSend = false;
-
-      setCurrentLocation({ lat: latitude, lng: longitude, speed: speed || 0, heading: heading || 0 });
-
-      if (!lastPositionRef.current) { 
-          shouldSend = true; setDisplayLocation({ lat: latitude, lng: longitude });
-      } else {
-          const timeDiff = currentTime - lastPositionRef.current.time;
-          const distDiff = getDistance(lastPositionRef.current.lat, lastPositionRef.current.lng, latitude, longitude);
-          if (timeDiff >= GPS_CONFIG.MIN_TIME_MS || distDiff >= GPS_CONFIG.MIN_DISTANCE_METERS) shouldSend = true; 
-          if (distDiff > 10) setDisplayLocation({ lat: latitude, lng: longitude });
-      }
-
-      if (shouldSend) {
-          setIsSending(true);
-          try {
-              lastPositionRef.current = { lat: latitude, lng: longitude, time: currentTime };
-              await onUpdateDriver(driver.id, { lat: latitude, lng: longitude, heading: heading || 0, speed: speed || 0, lastUpdate: serverTimestamp() });
-              setGpsError(''); setGpsActive(true);
-          } catch (error) {} finally { setIsSending(false); }
-      } else { setGpsActive(true); }
-  };
-
-  const startTracking = () => {
-      setGpsError(''); keepScreenOn();
-      if ('geolocation' in navigator) {
-          if (watchIdRef.current !== null) navigator.geolocation.clearWatch(watchIdRef.current);
-          watchIdRef.current = navigator.geolocation.watchPosition(
-              processPosition,
-              (error) => { setGpsActive(false); setGpsError(error.code === 1 ? "Permissão negada." : "Buscando sinal..."); },
-              { enableHighAccuracy: true, timeout: GPS_CONFIG.TIMEOUT_MS, maximumAge: 0 }
-          );
-      } else { setGpsError("Celular não suporta GPS."); }
-  };
-
-  const stopTracking = () => {
-      if (watchIdRef.current !== null) { navigator.geolocation.clearWatch(watchIdRef.current); watchIdRef.current = null; }
-      if (wakeLockRef.current) { wakeLockRef.current.release().then(() => wakeLockRef.current = null); }
-      setGpsActive(false); setCurrentLocation(null);
-  };
-
-  // ✅ FUNÇÕES DE UPLOAD COM AVISOS E LABEL NATIVA
+  // HANDLERS UPLOAD
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>, orderId: string) => {
       const file = e.target.files?.[0];
       if (!file) return;
-
       setIsUploadingPhoto(true);
-      
-      // Pequena pausa para garantir que o loader apareça
       setTimeout(async () => {
-          try { 
-              // Comprime a imagem da galeria (que costuma ser grande)
-              const compressedBase64 = await compressImageNative(file); 
-              
-              setDeliveryPhotos(prev => ({...prev, [orderId]: compressedBase64}));
-              await onUpdateOrder(orderId, { photoProof: compressedBase64 });
-              
-              alert("Foto da galeria enviada com sucesso!");
-          } catch (err: any) { 
-              alert("Erro ao processar imagem. Tente uma foto mais leve ou outra imagem."); 
-          } finally {
-              setIsUploadingPhoto(false);
-              if (e.target) e.target.value = ''; 
-          }
+          try {
+              const base64 = await compressImageNative(file);
+              setDeliveryPhotos(prev => ({...prev, [orderId]: base64}));
+              await onUpdateOrder(orderId, { photoProof: base64 });
+              alert("Foto enviada!");
+          } catch (err) { alert("Erro na imagem."); }
+          finally { setIsUploadingPhoto(false); if(e.target) e.target.value = ''; }
       }, 100);
   };
 
-  const handleDocumentUpload = (e: React.ChangeEvent<HTMLInputElement>, fieldName: string, successMessage: string) => {
-      if (!e.target.files || e.target.files.length === 0) return;
-      const file = e.target.files[0];
+  const handleDocumentUpload = (e: React.ChangeEvent<HTMLInputElement>, fieldName: string) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
       setIsUploadingPhoto(true);
-      
       setTimeout(async () => {
-          try { 
-              const compressedBase64 = await compressImageNative(file); 
-              await onUpdateDriver(driver.id, { [fieldName]: compressedBase64 });
-              alert(successMessage);
-          } catch (err: any) { 
-              alert("Erro ao enviar o documento. Tente tirar a foto de mais longe."); 
-          } finally {
-              setIsUploadingPhoto(false);
-          }
+          try {
+              const base64 = await compressImageNative(file);
+              await onUpdateDriver(driver.id, { [fieldName]: base64 });
+              alert("Documento atualizado!");
+          } catch (err) { alert("Erro no documento."); }
+          finally { setIsUploadingPhoto(false); if(e.target) e.target.value = ''; }
       }, 50);
   };
 
-  const handleReportIssue = (orderId: string, issue: string) => {
-      onUpdateOrder(orderId, { routeIssue: issue, issueReportedAt: serverTimestamp() });
-      setShowSOSModal(null);
-      alert(`Alerta enviado à loja: ${issue}`);
-  };
-
   useEffect(() => {
-      const handleVisibilityChange = () => { if (document.visibilityState === 'visible' && driver.status !== 'offline') keepScreenOn(); };
-      document.addEventListener('visibilitychange', handleVisibilityChange);
-      return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+      if (driver.status !== 'offline') {
+          watchIdRef.current = navigator.geolocation.watchPosition(
+              (pos) => {
+                  const { latitude, longitude, heading } = pos.coords;
+                  setDisplayLocation({ lat: latitude, lng: longitude });
+                  setCurrentLocation({ lat: latitude, lng: longitude, heading: heading || 0 });
+                  onUpdateDriver(driver.id, { lat: latitude, lng: longitude, heading: heading || 0, lastUpdate: serverTimestamp() });
+                  setGpsActive(true);
+              },
+              () => setGpsActive(false),
+              { enableHighAccuracy: true }
+          );
+      }
+      return () => { if (watchIdRef.current) navigator.geolocation.clearWatch(watchIdRef.current); };
   }, [driver.status]);
 
-  useEffect(() => {
-      if (driver.status === 'offline') stopTracking(); else startTracking();
-      return () => stopTracking();
-  }, [driver.status]);
-
-  useEffect(() => {
-    const audio = new Audio(NOTIFICATION_SOUND);
-    audio.loop = true; audioRef.current = audio;
-  }, []);
-
-  const todaysOrders = useMemo(() => {
-     return orders.filter((o: Order) => o.driverId === driver.id && (o.status === 'assigned' || o.status === 'accepted' || o.status === 'delivering' || (o.status === 'completed' && isToday(o.completedAt))))
-     .sort((a, b) => {
-         if (a.status !== 'completed' && b.status === 'completed') return -1;
-         if (a.status === 'completed' && b.status !== 'completed') return 1;
-         return (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0);
-     });
-  }, [orders, driver.id]);
-
-  const activeOrder = useMemo(() => todaysOrders.find(o => o.status !== 'completed'), [todaysOrders]);
-
-  const visibleUnassignedOrders = useMemo(() => {
-      if (!unassignedOrders || unassignedOrders.length === 0) return [];
-      return unassignedOrders.filter(o => {
-          if (o.driverId && o.driverId.trim() !== "") return false;
-          if (driver.status === 'available') return true; 
-          let createdAtMs = now;
-          if (o.createdAt) {
-              if (o.createdAt.seconds) createdAtMs = o.createdAt.seconds * 1000;
-              else if (typeof o.createdAt.toMillis === 'function') createdAtMs = o.createdAt.toMillis();
-              else if (o.createdAt instanceof Date) createdAtMs = o.createdAt.getTime();
-              else if (typeof o.createdAt === 'number') createdAtMs = o.createdAt;
-          }
-          return (now - createdAtMs) >= 60000; 
-      });
-  }, [unassignedOrders, driver.status, now]);
+  const activeOrder = useMemo(() => orders.find(o => o.driverId === driver.id && o.status !== 'completed'), [orders, driver.id]);
   
-  const hasIncoming = (offers.length > 0 || visibleUnassignedOrders.length > 0);
-
-  useEffect(() => {
-      const incoming = orders.some(o => o.driverId === driver.id && o.status === 'assigned') || hasIncoming;
-      if (incoming && driver.status !== 'offline' && !isMutedTemporary && driver.isActive !== false) {
-          const playPromise = audioRef.current?.play();
-          if (playPromise !== undefined) playPromise.catch(e => console.warn("Audio bloqueado", e));
-          if (navigator.vibrate) navigator.vibrate([500, 200, 500]);
-      } else { stopNotificationSound(); }
-  }, [orders, offers, visibleUnassignedOrders, driver.id, driver.status, isMutedTemporary, hasIncoming, driver.isActive]);
-
-  const allDeliveries = useMemo(() => orders.filter((o: Order) => o.status === 'completed' && o.driverId === driver.id).sort((a: Order, b: Order) => (b.completedAt?.seconds || 0) - (a.completedAt?.seconds || 0)), [orders, driver.id]);
-
-  const calculateDriverFee = (orderVal: number) => {
-      if (driver.paymentModel === 'percentage') return orderVal * ((driver.paymentRate || 0) / 100);
-      else if (driver.paymentModel === 'salary') return 0;
-      else return driver.paymentRate !== undefined ? driver.paymentRate : 5.00;
-  };
-
-  const financialData = useMemo(() => {
-      const lastSettlementTime = driver.lastSettlementAt?.seconds || 0;
-      const currentDeliveries = orders.filter((o: Order) => o.status === 'completed' && o.driverId === driver.id && (o.completedAt?.seconds || 0) > lastSettlementTime);
-      const currentVales = vales.filter((v: Vale) => v.driverId === driver.id && (v.createdAt?.seconds || 0) > lastSettlementTime);
-      
-      let totalDeliveriesValue = currentDeliveries.reduce((acc, o) => acc + calculateDriverFee(o.value || 0), 0);
-      const totalValesValue = currentVales.reduce((acc, v) => acc + (Number(v.amount) || 0), 0);
-      
-      return { deliveriesCount: currentDeliveries.length, deliveriesValue: totalDeliveriesValue, valesCount: currentVales.length, valesValue: totalValesValue, netValue: totalDeliveriesValue - totalValesValue, valesList: currentVales };
-  }, [orders, vales, driver]);
-
-  const displayedHistory = useMemo(() => historyFilter === 'today' ? allDeliveries.filter((o: Order) => isToday(o.completedAt)) : allDeliveries, [allDeliveries, historyFilter]);
-
-  const historySummary = useMemo(() => {
-      const count = displayedHistory.length;
-      let total = displayedHistory.reduce((acc, o) => acc + calculateDriverFee(o.value || 0), 0);
-      return { count, total };
-  }, [displayedHistory, driver]);
-
-  const getSimulatedDistance = (id: string) => {
-      const hash = id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-      const km = ((hash % 80) + 10) / 10;
-      const min = Math.ceil(km * 4); 
-      return { km: km.toFixed(1), min };
-  };
-
-  const getStoreName = (o: any) => {
-      if (o.storeName && o.storeName.trim() !== '') return o.storeName;
-      if (o.slug && o.slug.trim() !== '') return String(o.slug).replace(/-/g, ' ');
-      return "JHAN'S BURGERS";
-  };
-
-  const speedKmh = (currentLocation?.speed || 0) * 3.6;
-  const cardinalDir = getCardinalDirection(currentLocation?.heading || 0);
-
-  const bgMain = isDark ? "bg-[#121212]" : "bg-[#f2f2f7]"; 
+  const bgMain = isDark ? "bg-[#121212]" : "bg-[#f2f2f7]";
   const textPrimary = isDark ? "text-white" : "text-slate-900";
-  const textSecondary = isDark ? "text-[#a1a1aa]" : "text-[#71717a]";
   const glassPanel = isDark ? "bg-[#1c1c1e] border border-white/5 shadow-2xl" : "bg-white border border-black/5 shadow-2xl";
-  const inputBg = isDark ? 'bg-black/50 border-white/10 text-white placeholder:text-slate-500' : 'bg-slate-100 border-black/10 text-slate-900 placeholder:text-slate-400';
-  const mapFilter = isDark ? 'invert(95%) hue-rotate(180deg) brightness(85%) contrast(120%) grayscale(20%) sepia(5%)' : 'contrast(1.3) brightness(0.9) saturate(1.4)'; 
+  const mapFilter = isDark ? 'invert(95%) hue-rotate(180deg) brightness(85%)' : 'brightness(0.9)';
 
-  // ✅ DOCUMENT LIST ITEM CORRIGIDO PARA USAR LABEL NATIVA
- // ✅ 1. SUBSTITUA O DocumentListItem POR ESTE AQUI (Agora ele aceita o 'id'):
-  // ✅ 1. SUBSTITUA O DocumentListItem POR ESTE AQUI (Agora ele aceita o 'id'):
-  const DocumentListItem = ({ id, label, isSent, onChange }: { id: string, label: string, isSent: boolean, onChange: (e:any)=>void }) => (
+  const DocumentListItem = ({ id, label, isSent, onChange }: any) => (
       <div className={`flex justify-between items-center p-3 rounded-xl border ${isDark ? 'bg-black/40 border-white/5' : 'bg-slate-100 border-slate-200'}`}>
-          <span className={`text-[11px] font-bold uppercase tracking-widest ${textSecondary}`}>{label}</span>
-          <div className="flex items-center gap-3">
-              {isSent ? (
-                  <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-500 bg-emerald-500/10 px-2 py-1 rounded-md"><CheckCircle2 size={12}/> Enviado</span>
-              ) : (
-                  <span className="flex items-center gap-1 text-[10px] font-bold text-slate-500 bg-slate-500/10 px-2 py-1 rounded-md">Pendente</span>
-              )}
-              
-              {/* O segredo nativo: o htmlFor da label aponta para o ID do input escondido */}
-              <label htmlFor={id} className={`text-[10px] font-bold px-3 py-1.5 rounded-md transition-colors cursor-pointer ${isDark ? 'bg-white/10 hover:bg-white/20 text-white' : 'bg-slate-300 hover:bg-slate-400 text-slate-800'}`}>
-                  {isSent ? 'Reenviar' : 'Enviar'}
+          <span className="text-[11px] font-bold uppercase opacity-60">{label}</span>
+          <div className="flex items-center gap-2">
+              {isSent && <CheckCircle2 size={14} className="text-emerald-500" />}
+              <label htmlFor={id} className="text-[10px] font-bold px-3 py-1.5 bg-blue-500 text-white rounded-md cursor-pointer active:scale-95 transition-transform">
+                  {isSent ? 'Trocar' : 'Enviar'}
               </label>
-              <input 
-                  id={id}
-                  type="file" 
-                  accept="image/*" 
-                  className="hidden" 
-                  onChange={onChange} 
-                  onClick={(e) => (e.target as HTMLInputElement).value = ''} 
-              />
+              <input id={id} type="file" accept="image/*" className="hidden" onChange={onChange} />
           </div>
-      </div>
-  );
-
-  // ✅ 2. SUBSTITUA O DocumentPanelModern POR ESTE AQUI (Agora ele envia o 'id' para cada item):
-  const DocumentPanelModern = () => (
-      <div className={`w-full p-5 rounded-[1.5rem] border flex flex-col gap-2 pointer-events-auto ${glassPanel}`}>
-          <h3 className={`text-xs font-bold uppercase tracking-widest mb-2 ${textSecondary}`}>Meus Documentos</h3>
-          <DocumentListItem id="doc-avatar" label="Selfie" isSent={!!driver.avatar} onChange={(e) => handleDocumentUpload(e, 'avatar', 'Selfie enviada!')} />
-          <DocumentListItem id="doc-front" label="Doc Frente" isSent={!!(driver.documentFront || driver.documentPhoto)} onChange={(e) => handleDocumentUpload(e, 'documentFront', 'Frente enviada!')} />
-          <DocumentListItem id="doc-back" label="Doc Verso" isSent={!!driver.documentBack} onChange={(e) => handleDocumentUpload(e, 'documentBack', 'Verso enviado!')} />
       </div>
   );
 
   return (
-    <div className={`fixed inset-0 w-screen h-screen flex flex-col font-sans transition-colors duration-300 ${bgMain} overflow-hidden`}>
-      
-      {isUploadingPhoto && (
-          <ModernLoader title="Enviando Foto" subtitle="Comprimindo e salvando no sistema de forma segura..." />
+    <div className={`fixed inset-0 w-screen h-screen flex flex-col ${bgMain} overflow-hidden font-sans`}>
+      {isUploadingPhoto && <ModernLoader title="Enviando" subtitle="Sincronizando com servidor..." />}
+
+      {/* BACKGROUND MAPA (SOMENTE NA HOME) */}
+      {activeTab === 'home' && (
+          <div className="absolute inset-0 z-0 bg-black pointer-events-none overflow-hidden">
+              {displayLocation ? (
+                  <>
+                      <iframe 
+                          src={`https://www.openstreetmap.org/export/embed.html?bbox=${displayLocation.lng-0.002},${displayLocation.lat-0.002},${displayLocation.lng+0.002},${displayLocation.lat+0.002}&layer=mapnik`}
+                          className="absolute inset-0 w-full h-full border-0 pointer-events-none"
+                          style={{ filter: mapFilter, transform: 'scale(1.5)' }}
+                      ></iframe>
+                      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/40 to-black z-10"></div>
+                      
+                      {/* BÚSSOLA */}
+                      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20">
+                          <div 
+                              className="w-16 h-16 bg-blue-500 rounded-full border-4 border-white shadow-[0_0_30px_rgba(59,130,246,0.8)] flex items-center justify-center transition-transform duration-500"
+                              style={{ transform: `rotate(${currentLocation?.heading || 0}deg)` }}
+                          >
+                              <Navigation2 size={32} fill="white" className="text-white" />
+                          </div>
+                      </div>
+                  </>
+              ) : (
+                  <div className="flex items-center justify-center h-full text-slate-700 font-bold uppercase tracking-widest text-xs animate-pulse">Buscando Sinal GPS...</div>
+              )}
+          </div>
       )}
 
-      {driver.isActive === false ? (
-          <div className="relative z-[500] flex-1 flex flex-col items-center justify-center p-6 text-center overflow-y-auto w-full h-full pointer-events-auto">
-              <div className="w-24 h-24 bg-red-500/10 border-2 border-red-500/20 rounded-full flex items-center justify-center mb-6 animate-pulse mt-10">
-                  <Ban className="text-red-500" size={48}/>
-              </div>
-              <h2 className={`text-3xl font-black uppercase tracking-widest ${textPrimary}`}>Conta Suspensa</h2>
-              <p className={`text-sm mt-3 mb-8 max-w-xs leading-relaxed ${textSecondary}`}>
-                  Sua conta está inativa no momento. Procure a loja para regularizar seu acesso.
-              </p>
-              
-              <div className="w-full max-w-sm mb-8">
-                  <div className={`w-full p-5 rounded-[1.5rem] border flex flex-col gap-2 pointer-events-auto ${glassPanel}`}>
-                      <h3 className={`text-xs font-bold uppercase tracking-widest mb-2 ${textSecondary}`}>Meus Documentos</h3>
-                      <DocumentListItem label="Selfie" isSent={!!driver.avatar} onChange={(e) => handleDocumentUpload(e, 'avatar', 'Selfie enviada!')} />
-                      <DocumentListItem label="Doc Frente" isSent={!!(driver.documentFront || driver.documentPhoto)} onChange={(e) => handleDocumentUpload(e, 'documentFront', 'Frente enviada!')} />
-                      <DocumentListItem label="Doc Verso" isSent={!!driver.documentBack} onChange={(e) => handleDocumentUpload(e, 'documentBack', 'Verso enviado!')} />
+      {/* HEADER */}
+      <div className="pt-4 px-6 pb-4 flex justify-between items-center z-10 pointer-events-auto shrink-0">
+          <div className="flex items-center gap-3">
+              <label htmlFor="header-up" className="cursor-pointer">
+                  <img src={driver.avatar || DEFAULT_AVATAR} className="w-12 h-12 rounded-full border-2 border-blue-500 object-cover" />
+                  <input id="header-up" type="file" accept="image/*" className="hidden" onChange={(e) => handleDocumentUpload(e, 'avatar')} />
+              </label>
+              <div>
+                  <h2 className={`text-lg font-black ${textPrimary}`}>{driver.name}</h2>
+                  <div className={`text-[9px] font-bold uppercase ${gpsActive ? 'text-emerald-500' : 'text-red-500'}`}>
+                      {gpsActive ? '● GPS Online' : '○ GPS Offline'}
                   </div>
               </div>
-
-              <button onClick={() => setShowLogoutConfirm(true)} className="mb-10 p-4 bg-red-500/10 border border-red-500/20 text-red-500 rounded-full font-bold text-sm uppercase tracking-widest flex items-center justify-center gap-2 active:scale-95 transition-transform w-full max-w-xs">
-                  <LogOut size={18}/> Sair do Aplicativo
-              </button>
           </div>
+          <button onClick={toggleTheme} className="p-3 rounded-full bg-white/5 border border-white/10 text-amber-400 backdrop-blur-md">
+              {isDark ? <Sun size={20}/> : <Moon size={20}/>}
+          </button>
+      </div>
 
-      ) : driver.status !== 'offline' && !gpsActive && !gpsError ? (
-          
-          <div className="relative z-[100] flex-1 flex flex-col items-center justify-center p-6 text-center pointer-events-auto">
-              <ModernLoader title="Buscando Satélite" subtitle="Conectando ao GPS para iniciar a navegação..." isFullScreen={false} />
-              <button onClick={() => { onToggleStatus(); stopTracking(); }} className={`mt-12 px-6 py-3 rounded-full font-medium transition-colors ${glassPanel} ${textPrimary} hover:opacity-80`}>Cancelar e ficar Offline</button>
-          </div>
-
-      ) : (
-
-          <>
-              {activeTab === 'home' && (
-                  <div className="absolute inset-0 z-0 bg-black pointer-events-none overflow-hidden">
-                      {driver.status !== 'offline' && displayLocation ? (
-                          <>
-                              <iframe 
-                                  frameBorder="0" scrolling="no" marginHeight={0} marginWidth={0}
-                                  src={`https://www.openstreetmap.org/export/embed.html?bbox=${displayLocation.lng-0.0015},${displayLocation.lat-0.0015},${displayLocation.lng+0.0015},${displayLocation.lat+0.0015}&layer=mapnik`}
-                                  style={{ border: 0, filter: mapFilter, width: 'calc(100% + 150px)', height: 'calc(100% + 150px)' }}
-                                  className="absolute -top-[75px] -left-[75px] max-w-none pointer-events-none" 
-                              ></iframe>
-                              <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_transparent_40%,_rgba(0,0,0,0.5)_100%)] z-10 pointer-events-none"></div>
-                              <div className="absolute bottom-0 left-0 right-0 h-1/2 bg-gradient-to-t from-black via-black/80 to-transparent z-10 pointer-events-none"></div>
-                              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 flex flex-col items-center justify-center pointer-events-none">
-                                  <div className="absolute -top-24 w-48 h-32 bg-gradient-to-b from-transparent to-blue-500/20 opacity-70" style={{ clipPath: 'polygon(50% 100%, 0 0, 100% 0)' }}></div>
-                                  <div className="relative z-10 w-14 h-14 bg-gradient-to-b from-slate-800 to-black rounded-full border-[3px] border-blue-500 shadow-[0_0_40px_rgba(59,130,246,0.9)] flex items-center justify-center transition-transform duration-700 ease-out" style={{ transform: `rotate(${currentLocation?.heading ? currentLocation.heading : 0}deg)` }}>
-                                      <div style={{ transform: 'rotate(-45deg)' }}>
-                                          <Navigation2 size={28} fill="#60A5FA" className="text-blue-200" strokeWidth={1} />
-                                      </div>
-                                  </div>
+      {/* CONTEUDO */}
+      <div className="flex-1 overflow-y-auto px-4 pb-28 pt-4 pointer-events-auto z-10">
+          {activeTab === 'home' && (
+              <div className="max-w-md mx-auto mt-[40vh]">
+                  {activeOrder ? (
+                      <div className={`p-6 rounded-[2.5rem] ${glassPanel} space-y-6 shadow-2xl animate-in slide-in-from-bottom-10`}>
+                          <div className="flex justify-between items-start">
+                              <div>
+                                  <span className="text-[10px] font-bold text-blue-500 uppercase tracking-widest">Entrega Ativa</span>
+                                  <h3 className={`text-2xl font-black ${textPrimary}`}>#{activeOrder.id.slice(-5)}</h3>
                               </div>
-                          </>
-                      ) : (
-                          <div className="absolute inset-0 flex items-center justify-center bg-slate-900 text-slate-500 text-sm font-bold uppercase tracking-widest z-10">
-                              {driver.status === 'offline' ? 'Você está Offline' : 'Aguardando Satélite...'}
+                              <div className="text-right">
+                                  <p className="text-2xl font-black text-emerald-500">{formatCurrency(activeOrder.value)}</p>
+                              </div>
                           </div>
-                      )}
-                  </div>
-              )}
 
-              <div className={`relative z-20 flex flex-col h-full pointer-events-none ${activeTab !== 'home' ? bgMain : ''}`}>
-                  
-                  <div className="pt-4 px-6 pb-4 flex justify-between items-center z-10 shrink-0 pointer-events-auto">
-                    <div className="flex items-center gap-3">
-                      <label className="relative cursor-pointer group">
-                          <img src={driver.avatar || DEFAULT_AVATAR} className={`w-12 h-12 rounded-full object-cover shadow-lg border ${isDark ? 'border-white/10' : 'border-black/5'}`} alt="Motorista" onError={(e) => { e.currentTarget.src = DEFAULT_AVATAR; }} />
-                          <input type="file" accept="image/*" capture="user" className="hidden" onChange={(e) => handleDocumentUpload(e, 'avatar', 'Selfie alterada!')} onClick={(e) => (e.target as HTMLInputElement).value = ''} />
-                      </label>
-                      <div className="flex flex-col items-start gap-1">
-                          <h2 className={`text-xl font-black leading-none tracking-tight drop-shadow-md ${textPrimary}`}>{driver.name || "Motorista"}</h2>
-                          {driver.status !== 'offline' ? (
-                              <div className="bg-emerald-500/10 text-[#34d399] px-2 py-0.5 rounded text-[9px] font-black tracking-widest border border-emerald-500/30 uppercase shadow-md flex items-center gap-1">
-                                  <Signal size={8} /> GPS ATIVO
-                              </div>
-                          ) : (
-                              <div className="bg-slate-500/10 text-slate-400 px-2 py-0.5 rounded text-[9px] font-black tracking-widest border border-slate-500/30 uppercase shadow-md">
-                                  OFFLINE
-                              </div>
+                          {activeOrder.status === 'delivering' && (
+                              <label htmlFor="order-photo-up" className="w-full py-4 bg-blue-600 rounded-2xl flex items-center justify-center gap-2 text-white font-black text-xs uppercase cursor-pointer active:scale-95 transition-all shadow-lg">
+                                  <ImagePlus size={20}/> 
+                                  {deliveryPhotos[activeOrder.id] || activeOrder.photoProof ? 'Foto Anexada' : 'Foto da Galeria'}
+                                  <input id="order-photo-up" type="file" accept="image/*" className="hidden" onChange={(e) => handlePhotoUpload(e, activeOrder.id)} />
+                              </label>
                           )}
+
+                          <SwipeButton 
+                              text={activeOrder.status === 'assigned' ? "Deslize para Aceitar" : "Deslize para Finalizar"} 
+                              colorClass={activeOrder.status === 'assigned' ? "bg-blue-600" : "bg-emerald-600"} 
+                              onConfirm={() => activeOrder.status === 'assigned' ? onAcceptOrder(activeOrder.id) : onCompleteOrder(activeOrder.id, '', '')} 
+                          />
                       </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                        <button onClick={toggleTheme} className={`p-2 rounded-full transition-colors shadow-lg ${isDark ? 'text-amber-400 bg-white/5 border border-white/10' : 'text-amber-500 bg-white border border-slate-200'}`}>
-                            {isDark ? <Sun size={20} strokeWidth={2}/> : <Moon size={20} strokeWidth={2}/>}
-                        </button>
-                        <button onClick={() => setShowLogoutConfirm(true)} className={`p-2 rounded-full transition-colors shadow-lg ${isDark ? 'text-red-400 bg-white/5 border border-white/10' : 'text-red-500 bg-white border border-slate-200'}`}>
-                            <LogOut size={20} strokeWidth={2}/>
-                        </button>
-                    </div>
+                  ) : (
+                      <div className="p-4 rounded-2xl bg-black/40 border border-white/10 backdrop-blur-md text-center">
+                          <p className="text-white text-xs font-bold uppercase tracking-widest">Aguardando novos pedidos...</p>
+                      </div>
+                  )}
+              </div>
+          )}
+
+          {activeTab === 'wallet' && (
+              <div className="max-w-md mx-auto space-y-4">
+                  <div className={`p-8 rounded-[2.5rem] ${glassPanel} text-center`}>
+                      <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">Saldo</span>
+                      <h2 className={`text-4xl font-black mt-2 ${textPrimary}`}>{formatCurrency(150.00)}</h2>
                   </div>
-
-                  <div className="flex-1 flex flex-col px-4 pb-[140px] overflow-y-auto no-scrollbar pt-20 pointer-events-auto">
-                    <style>{`
-                      .no-scrollbar::-webkit-scrollbar { display: none; }
-                      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-                    `}</style>
-                    
-                    {/* ABA PRINCIPAL (HOME) */}
-                    {activeTab === 'home' && (
-                      <div className="flex flex-col w-full max-w-md mx-auto relative pointer-events-none">
-                          <div className="h-[calc(100vh-260px)] min-h-[400px] w-full relative shrink-0">
-                              {driver.status !== 'offline' && displayLocation && (
-                                  <div className="absolute right-0 bottom-4 flex flex-col items-end gap-2 z-30 pointer-events-none">
-                                      <div className={`flex flex-col items-center justify-center p-1.5 rounded-lg border shadow-sm backdrop-blur-md min-w-[48px] ${isDark ? 'bg-black/40 border-white/10' : 'bg-white/60 border-black/10'}`}>
-                                          <span className={`text-base font-black leading-none drop-shadow-md ${textPrimary}`}>{speedKmh.toFixed(0)}</span>
-                                          <span className={`text-[7px] font-bold uppercase tracking-widest mt-1 ${textSecondary}`}>km/h</span>
-                                      </div>
-                                      <div className={`flex flex-col items-center justify-center p-1.5 rounded-lg border shadow-sm backdrop-blur-md min-w-[48px] ${isDark ? 'bg-black/40 border-white/10' : 'bg-white/60 border-black/10'}`}>
-                                          <span className={`text-base font-black leading-none drop-shadow-md ${textPrimary}`}>{cardinalDir}</span>
-                                          <span className={`text-[7px] font-bold uppercase tracking-widest mt-1 ${textSecondary}`}>Dir</span>
-                                      </div>
-                                  </div>
-                              )}
-                          </div>
-
-                          <div className="w-full pointer-events-auto pb-6">
-                              {activeOrder ? (
-                                  <div className={`p-5 rounded-[2rem] border relative w-full ${glassPanel}`}>
-                                      <div className="flex justify-between items-start mb-5">
-                                          <div className="flex flex-col gap-3 flex-1 min-w-0 pr-4">
-                                              <div>
-                                                  <div className="flex items-center gap-1.5 w-fit px-2 py-1 mb-1.5 rounded border text-[9px] font-bold uppercase tracking-wider bg-amber-500/10 text-amber-500 border-amber-500/20">
-                                                      <Store size={10} /> {getStoreName(activeOrder).toUpperCase()}
-                                                  </div>
-                                                  <h3 className={`font-black text-lg truncate ${textPrimary}`}>#{formatOrderId(activeOrder.id)}</h3>
-                                              </div>
-                                              
-                                              <div className="flex items-center gap-2">
-                                                  <button onClick={() => setShowSOSModal(activeOrder.id)} className="flex items-center gap-1.5 h-9 px-4 bg-red-500/10 rounded-full border border-red-500/30 text-red-500 active:scale-95 transition-transform shadow-sm">
-                                                      <AlertTriangle size={15} />
-                                                      <span className="text-[10px] font-bold uppercase tracking-widest">S.O.S</span>
-                                                  </button>
-                                                  <button 
-                                                      onClick={() => {
-                                                          const dest = activeOrder.status === 'delivering' ? activeOrder.address : ((activeOrder as any).storeAddress || (activeOrder as any).storeName || 'Loja');
-                                                          window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(dest)}`, '_blank');
-                                                      }}
-                                                      className={`flex items-center gap-1.5 h-9 px-4 rounded-full border shadow-sm active:scale-95 transition-transform ${isDark ? 'bg-white/10 border-white/20 text-white' : 'bg-slate-800 border-slate-700 text-white'}`}
-                                                  >
-                                                      <Map size={15} />
-                                                      <span className="text-[10px] font-bold uppercase tracking-widest">GPS</span>
-                                                  </button>
-                                              </div>
-                                          </div>
-                                          
-                                          <div className="flex flex-col items-end text-right">
-                                              <div className={`p-2 rounded-xl border flex flex-col items-end ${isDark ? 'bg-black/30 border-white/5' : 'bg-slate-50 border-slate-200'}`}>
-                                                  <p className={`text-[8px] font-bold uppercase ${textSecondary}`}>Cobrar do Cliente</p>
-                                                  <p className="font-black text-red-500 text-2xl leading-none drop-shadow-md mt-1">{formatCurrency(activeOrder.value)}</p>
-                                              </div>
-                                              <p className={`text-[10px] font-bold uppercase mt-2 text-[#34d399]`}>Sua Taxa: {formatCurrency(calculateDriverFee(activeOrder.value))}</p>
-                                          </div>
-                                      </div>
-
-                                      {activeOrder.status === 'assigned' && (
-                                          <SwipeButton text="Deslize p/ Ir à Loja" colorClass="bg-[#3b82f6] text-white" icon={Navigation2} onConfirm={() => handleAcceptOrderWithMute(activeOrder.id)} />
-                                      )}
-
-                                      {activeOrder.status === 'accepted' && (
-                                          <div className="flex flex-col gap-3 animate-in fade-in">
-                                              <input type="text" inputMode="numeric" placeholder="CÓDIGO DE RETIRADA" className={`w-full p-4 rounded-full font-black text-center text-sm outline-none transition-colors tracking-widest ${inputBg}`} value={storeCodes[activeOrder.id] || ''} onChange={(e) => setStoreCodes(prev => ({...prev, [activeOrder.id]: e.target.value}))} />
-                                              <SwipeButton text="Deslize p/ Pegar" colorClass="bg-amber-500 text-black" icon={Package} onConfirm={() => onPickupOrder(activeOrder.id, storeCodes[activeOrder.id], activeOrder.restaurantCode || "")} />
-                                          </div>
-                                      )}
-
-                                      {activeOrder.status === 'delivering' && (
-                                          <div className="flex flex-col gap-3 animate-in fade-in">
-                                              <div className={`p-4 rounded-2xl border flex flex-col gap-3 ${isDark ? 'bg-black/30 border-white/5' : 'bg-slate-50 border-slate-200'}`}>
-                                                  <div className="flex items-start gap-3">
-                                                      <User size={18} className="text-amber-500 shrink-0 mt-0.5"/>
-                                                      <div className="min-w-0">
-                                                          <p className={`text-[9px] font-bold uppercase tracking-widest ${textSecondary}`}>Cliente</p>
-                                                          <p className={`text-sm font-black leading-snug mt-0.5 truncate ${textPrimary}`}>{activeOrder.customer}</p>
-                                                      </div>
-                                                  </div>
-                                                  <div className={`border-t pt-3 flex items-start gap-3 ${isDark ? 'border-white/5' : 'border-slate-200'}`}>
-                                                      <MapPin size={18} className="text-[#3b82f6] shrink-0 mt-0.5"/>
-                                                      <div className="min-w-0">
-                                                          <p className={`text-[9px] font-bold uppercase tracking-widest ${textSecondary}`}>Endereço</p>
-                                                          <p className={`text-xs font-bold leading-snug mt-0.5 break-words ${textPrimary}`}>{activeOrder.address}</p>
-                                                      </div>
-                                                  </div>
-                                              </div>
-                                              
-                                              <div className="flex gap-2 mb-1">
-                                                  <button onClick={() => window.open(activeOrder.mapsLink || `http://google.com/maps?q=${encodeURIComponent(activeOrder.address)}`, '_blank')} className={`flex-1 py-3 rounded-xl font-black text-[10px] uppercase flex items-center justify-center gap-1.5 shadow-sm active:scale-95 transition-all border ${isDark ? 'bg-white/5 text-white border-white/10' : 'bg-black/5 text-black border-black/10'}`}><Map size={14}/> Mapa</button>
-                                                  <button onClick={() => window.open(`https://wa.me/55${activeOrder.phone.replace(/\D/g, '')}`, '_blank')} className={`flex-1 py-3 rounded-xl font-black text-[10px] uppercase flex items-center justify-center gap-1.5 shadow-sm active:scale-95 transition-all border ${isDark ? 'bg-white/5 text-white border-white/10' : 'bg-black/5 text-black border-black/10'}`}><MessageCircle size={14}/> Chat</button>
-                                                  
-                                                  {/* ✅ BOTÃO DA CÂMERA (COM LABEL NATIVA) */}
-                                                  {/* ✅ BOTÃO DA CÂMERA (PADRÃO NATIVO HTML5) */}
-                                                    {/* ✅ BOTÃO AJUSTADO PARA GALERIA */}
-                                                    <label 
-                                                        htmlFor={`gallery-upload-${activeOrder.id}`} 
-                                                        className={`flex-1 py-3 rounded-xl font-black text-[10px] uppercase flex items-center justify-center gap-1.5 shadow-sm active:scale-95 transition-all border cursor-pointer ${deliveryPhotos[activeOrder.id] || activeOrder.photoProof ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' : (isDark ? 'bg-white/5 text-white border-white/10' : 'bg-black/5 text-black border-black/10')}`}
-                                                    >
-                                                        <ImagePlus size={14}/> {deliveryPhotos[activeOrder.id] || activeOrder.photoProof ? 'Enviada' : 'Galeria'}
-                                                    </label>
-
-                                                    <input 
-                                                        id={`gallery-upload-${activeOrder.id}`}
-                                                        type="file" 
-                                                        accept="image/*" 
-                                                        className="hidden" 
-                                                        onChange={(e) => handlePhotoUpload(e, activeOrder.id)} 
-                                                    />
-                                              </div>
-
-                                              <input type="text" inputMode="numeric" placeholder="SENHA DO CLIENTE" className={`w-full p-4 rounded-full font-black text-center text-sm outline-none transition-colors tracking-widest ${inputBg}`} value={clientCodes[activeOrder.id] || ''} onChange={(e) => setClientCodes(prev => ({...prev, [activeOrder.id]: e.target.value}))} />
-                                              <SwipeButton text="Deslize p/ Entregar" colorClass="bg-[#34d399] text-black" icon={CheckSquare} onConfirm={() => onCompleteOrder(activeOrder.id, clientCodes[activeOrder.id], activeOrder.deliveryConfirmationCode || "")} />
-                                          </div>
-                                      )}
-                                  </div>
-                              ) : (
-                                  <div className={`p-4 rounded-2xl flex items-center justify-center shadow-lg border backdrop-blur-md w-full ${isDark ? 'bg-slate-900/80 border-slate-700/50' : 'bg-white/90 border-slate-200'}`}>
-                                     <span className={`text-xs font-black uppercase tracking-widest ${driver.status === 'offline' ? 'text-slate-500' : 'text-[#34d399] animate-pulse'}`}>
-                                         {driver.status === 'offline' ? 'Você está Offline' : 'Buscando Corridas...'}
-                                     </span>
-                                  </div>
-                              )}
-                          </div>
-                          <div className="h-[120px] w-full shrink-0"></div>
-                      </div>
-                    )}
-
-                    {/* ✅ ABA HISTÓRICO */}
-                    {activeTab === 'history' && (
-                        <div className="space-y-4 pt-2 w-full max-w-md mx-auto">
-                            <div className={`flex p-1.5 rounded-full border ${glassPanel}`}>
-                                <button onClick={() => setHistoryFilter('today')} className={`flex-1 py-2.5 text-[11px] uppercase tracking-widest font-bold rounded-full transition-all ${historyFilter === 'today' ? (isDark ? 'bg-white/10 text-white' : 'bg-black/5 text-black') : textSecondary}`}>Hoje</button>
-                                <button onClick={() => setHistoryFilter('all')} className={`flex-1 py-2.5 text-[11px] uppercase tracking-widest font-bold rounded-full transition-all ${historyFilter === 'all' ? (isDark ? 'bg-white/10 text-white' : 'bg-black/5 text-black') : textSecondary}`}>Todos</button>
-                            </div>
-                            
-                            <div className={`p-6 rounded-[2rem] border relative overflow-hidden flex flex-col justify-center items-center ${glassPanel}`}>
-                                <div className="flex items-center gap-2 mb-2">
-                                    <p className={`text-[10px] font-bold uppercase tracking-widest ${textSecondary}`}>Ganhos ({historyFilter === 'today' ? 'Hoje' : 'Geral'})</p>
-                                    <button onClick={() => setShowValues(!showValues)} className={`p-1 rounded-full ${textSecondary} hover:${textPrimary} transition-colors`}>
-                                        {showValues ? <EyeOff size={14}/> : <Eye size={14}/>}
-                                    </button>
-                                </div>
-                                <h3 className={`text-4xl font-black ${textPrimary}`}>
-                                    {showValues ? formatCurrency(historySummary.total) : 'R$ ••••'}
-                                </h3>
-                                <p className={`text-[10px] font-bold uppercase mt-2 bg-emerald-500/10 text-emerald-500 px-3 py-1 rounded-md`}>{historySummary.count} Entregas Realizadas</p>
-                            </div>
-
-                            <div className="space-y-2 mt-4">
-                                {displayedHistory.slice(0, visibleItems).map((o) => (
-                                    <div key={o.id} className={`flex justify-between items-center p-4 rounded-xl border ${glassPanel}`}>
-                                        <div className="flex flex-col min-w-0 pr-4">
-                                            <span className={`font-black text-sm truncate ${textPrimary}`}>{o.customer}</span>
-                                            <span className={`text-[10px] font-bold uppercase tracking-widest mt-1 ${textSecondary}`}>{formatTime(o.completedAt)}</span>
-                                        </div>
-                                        <div className="text-right shrink-0">
-                                            <span className="text-[10px] font-black text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded uppercase tracking-wider block mb-1">Entregue</span>
-                                            <span className={`font-black text-sm ${textPrimary}`}>{showValues ? formatCurrency(calculateDriverFee(o.value || 0)) : '••••'}</span>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                            <div className="h-[120px] w-full shrink-0"></div>
-                        </div>
-                    )}
-
-                    {/* ✅ ABA CARTEIRA */}
-                    {activeTab === 'wallet' && (
-                      <div className="space-y-4 pt-2 w-full max-w-md mx-auto">
-                         
-                         <div className={`p-6 rounded-[2rem] shadow-xl border relative overflow-hidden flex flex-col justify-center items-center ${glassPanel}`} style={{ background: isDark ? 'radial-gradient(ellipse at top, rgba(59,130,246,0.15), transparent), #1c1c1e' : 'radial-gradient(ellipse at top, rgba(59,130,246,0.1), transparent), #ffffff' }}>
-                            <div className="flex items-center gap-2 mb-2">
-                                <p className={`text-[10px] font-bold uppercase tracking-widest ${textSecondary}`}>Saldo a Receber</p>
-                                <button onClick={() => setShowValues(!showValues)} className={`p-1 rounded-full ${textSecondary} hover:${textPrimary} transition-colors`}>
-                                    {showValues ? <EyeOff size={16}/> : <Eye size={16}/>}
-                                </button>
-                            </div>
-                            <h3 className={`text-4xl font-black ${textPrimary}`}>
-                                {showValues ? formatCurrency(financialData.netValue) : 'R$ ••••'}
-                            </h3>
-                         </div>
-                         
-                         <div className="grid grid-cols-3 gap-2">
-                             <div className={`p-3 rounded-2xl border flex flex-col items-center justify-center text-center ${glassPanel}`}>
-                                 <Package size={16} className={`mb-1 ${textSecondary}`} />
-                                 <span className={`text-[9px] font-bold uppercase tracking-widest ${textSecondary}`}>Hoje</span>
-                                 <span className={`text-sm font-black mt-1 ${textPrimary}`}>{showValues ? historySummary.count : '•••'}</span>
-                             </div>
-                             <div className={`p-3 rounded-2xl border flex flex-col items-center justify-center text-center ${glassPanel}`}>
-                                 <Clock size={16} className={`mb-1 ${textSecondary}`} />
-                                 <span className={`text-[9px] font-bold uppercase tracking-widest ${textSecondary}`}>Pendentes</span>
-                                 <span className={`text-sm font-black mt-1 text-amber-500`}>{showValues ? unassignedOrders.length : '•••'}</span>
-                             </div>
-                             <div className={`p-3 rounded-2xl border flex flex-col items-center justify-center text-center ${glassPanel}`}>
-                                 <CheckCircle2 size={16} className={`mb-1 ${textSecondary}`} />
-                                 <span className={`text-[9px] font-bold uppercase tracking-widest ${textSecondary}`}>Concluídas</span>
-                                 <span className={`text-sm font-black mt-1 text-emerald-500`}>{showValues ? allDeliveries.length : '•••'}</span>
-                             </div>
-                         </div>
-
-                         <div className="space-y-2 mt-2">
-                             <div className={`flex justify-between items-center p-4 rounded-xl border ${glassPanel}`}>
-                                 <span className={`text-[11px] font-bold uppercase tracking-widest ${textSecondary}`}>Ganhos</span>
-                                 <span className={`font-black ${textPrimary}`}>{showValues ? formatCurrency(financialData.deliveriesValue) : '••••'}</span>
-                             </div>
-                             <div className={`flex justify-between items-center p-4 rounded-xl border ${glassPanel}`}>
-                                 <span className={`text-[11px] font-bold uppercase tracking-widest ${textSecondary}`}>Vales Solicitados</span>
-                                 <span className="font-black text-red-400">{showValues ? `- ${formatCurrency(financialData.valesValue)}` : '••••'}</span>
-                             </div>
-                         </div>
-                         
-                         <div className="mt-6">
-                            <div className={`w-full p-5 rounded-[1.5rem] border flex flex-col gap-2 pointer-events-auto ${glassPanel}`}>
-                                <h3 className={`text-xs font-bold uppercase tracking-widest mb-2 ${textSecondary}`}>Meus Documentos</h3>
-                                <DocumentListItem label="Selfie" isSent={!!driver.avatar} onChange={(e) => handleDocumentUpload(e, 'avatar', 'Selfie enviada!')} />
-                                <DocumentListItem label="Doc Frente" isSent={!!(driver.documentFront || driver.documentPhoto)} onChange={(e) => handleDocumentUpload(e, 'documentFront', 'Frente enviada!')} />
-                                <DocumentListItem label="Doc Verso" isSent={!!driver.documentBack} onChange={(e) => handleDocumentUpload(e, 'documentBack', 'Verso enviado!')} />
-                            </div>
-                         </div>
-
-                         <div className="h-[120px] w-full shrink-0"></div>
-                      </div>
-                    )}
-                    
-                    {editingOrder && <EditOrderModal order={editingOrder} onClose={() => setEditingOrder(null)} onSave={onUpdateOrder} />}
+                  
+                  <div className={`p-6 rounded-[2.5rem] ${glassPanel} space-y-3`}>
+                      <h3 className="text-xs font-black uppercase text-slate-500 mb-4 tracking-widest">Documentação</h3>
+                      <DocumentListItem id="wallet-selfie" label="Minha Selfie" isSent={!!driver.avatar} onChange={(e:any) => handleDocumentUpload(e, 'avatar')} />
+                      <DocumentListItem id="wallet-front" label="CNH (Frente)" isSent={!!driver.documentFront} onChange={(e:any) => handleDocumentUpload(e, 'documentFront')} />
+                      <DocumentListItem id="wallet-back" label="CNH (Verso)" isSent={!!driver.documentBack} onChange={(e:any) => handleDocumentUpload(e, 'documentBack')} />
                   </div>
               </div>
+          )}
+      </div>
 
-              {/* MODAIS DE AVISO */}
-              {driver.status !== 'offline' && hasIncoming && (
-                  <div className="fixed inset-0 z-[150] bg-black/90 backdrop-blur-sm flex flex-col items-center justify-center p-6 animate-in zoom-in duration-300 pointer-events-auto">
-                      <div className="w-full max-w-sm space-y-4 max-h-[90vh] overflow-y-auto no-scrollbar pb-10">
-                          <h2 className="text-white font-black text-2xl text-center uppercase tracking-widest mb-4 animate-bounce">Nova Corrida!</h2>
-                          
-                          {offers.map((offer) => {
-                              const est = getSimulatedDistance(offer.id);
-                              const myFee = calculateDriverFee(Number(offer.value || 0));
-                              return (
-                                  <div key={offer.id} className="bg-slate-900 border-2 border-amber-500 rounded-[2rem] p-6 shadow-[0_0_50px_rgba(245,158,11,0.5)]">
-                                      <div className="flex items-center justify-between mb-4">
-                                          <h3 className="font-black text-amber-500 text-[10px] tracking-widest uppercase bg-amber-500/10 px-2 py-1 rounded">CHAMADA DIRETA</h3>
-                                          <span className="text-[10px] font-bold text-slate-300 bg-slate-800 px-2 py-1 rounded-full">📍 {est.km}km • ⏳ ~{est.min}min</span>
-                                      </div>
-                                      <p className="font-medium text-base text-white">{offer.customer ? `${offer.customer} • ` : ''}{offer.address}</p>
-                                      <div className="flex justify-between items-end mt-5 mb-6 bg-slate-800 p-4 rounded-xl border border-slate-700">
-                                          <div>
-                                              <p className="text-[10px] text-slate-400 uppercase tracking-widest font-bold">Sua Taxa</p>
-                                              <p className="font-black text-emerald-400 text-4xl leading-none mt-1">{formatCurrency(myFee)}</p>
-                                          </div>
-                                      </div>
-                                      <SwipeButton text="Deslize p/ Aceitar" colorClass="bg-amber-500 text-black" onConfirm={() => handleAcceptOfferWithMute(offer.orderId)} />
-                                  </div>
-                              )
-                          })}
-
-                          {visibleUnassignedOrders.map((order) => {
-                              let ms = now;
-                              if (order.createdAt?.seconds) ms = order.createdAt.seconds * 1000;
-                              const waitedMins = Math.floor((now - ms) / 60000);
-                              const est = getSimulatedDistance(order.id);
-                              const myFee = calculateDriverFee(Number(order.value || 0));
-
-                              return (
-                                  <div key={order.id} className="bg-slate-900 border-2 border-[#3b82f6] rounded-[2rem] p-6 shadow-[0_0_50px_rgba(59,130,246,0.4)]">
-                                      <div className="flex items-center justify-between mb-4">
-                                          <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-slate-800 border border-slate-700 text-slate-300">
-                                              <Store size={10} className="text-[#3b82f6]" />
-                                              <span className="text-[9px] font-bold uppercase tracking-wider">{getStoreName(order).toUpperCase()}</span>
-                                          </div>
-                                          <span className="text-[10px] font-bold text-slate-300 bg-slate-800 px-2 py-1 rounded-full">📍 {est.km}km • ⏳ ~{est.min}min</span>
-                                      </div>
-                                      <p className="font-medium text-base text-white">{order.customer ? `${order.customer} • ` : ''}{order.address}</p>
-                                      
-                                      <div className="flex justify-between items-end mt-5 mb-6 bg-slate-800 p-4 rounded-xl border border-slate-700">
-                                          <div>
-                                              <p className="text-[10px] text-slate-400 uppercase tracking-widest font-bold">Sua Taxa</p>
-                                              <p className="font-black text-emerald-400 text-4xl leading-none mt-1">{formatCurrency(myFee)}</p>
-                                          </div>
-                                          {waitedMins > 0 && <span className="text-[10px] font-bold text-red-400 flex items-center gap-1"><Clock size={10}/> {waitedMins}m</span>}
-                                      </div>
-                                      <SwipeButton text="Deslize p/ Aceitar" colorClass="bg-[#3b82f6] text-white" onConfirm={() => handleAcceptOrderWithMute(order.id)} />
-                                  </div>
-                              )
-                          })}
-                      </div>
-                  </div>
-              )}
-
-              {showSOSModal && (
-                  <div className="fixed inset-0 z-[150] bg-black/90 backdrop-blur-sm flex items-center justify-center p-6 animate-in zoom-in pointer-events-auto">
-                      <div className={`w-full max-w-sm rounded-[2rem] p-6 shadow-2xl ${glassPanel}`}>
-                          <div className="text-center mb-6">
-                              <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-3">
-                                  <AlertTriangle size={32} className="text-red-500" />
-                              </div>
-                              <h2 className={`font-black text-2xl uppercase tracking-widest ${textPrimary}`}>S.O.S Rota</h2>
-                              <p className={`text-sm mt-1 ${textSecondary}`}>Avise a loja imediatamente.</p>
-                          </div>
-                          <div className="space-y-3">
-                              {['Pneu Furou / Moto Quebrou', 'Sofri um Acidente', 'Fui Parado em Blitz', 'Cliente Não Atende / Não Sai'].map(issue => (
-                                  <button key={issue} onClick={() => handleReportIssue(showSOSModal, issue)} className={`w-full font-bold py-4 rounded-xl text-base transition-colors text-left px-5 border ${isDark ? 'bg-white/5 border-white/10 text-slate-300 hover:bg-white/10' : 'bg-black/5 border-black/10 text-slate-700 hover:bg-black/10'}`}>
-                                      {issue}
-                                  </button>
-                              ))}
-                              <button onClick={() => setShowSOSModal(null)} className={`w-full mt-4 font-bold py-4 text-sm underline ${textSecondary}`}>Cancelar</button>
-                          </div>
-                      </div>
-                  </div>
-              )}
-
-              <div className={`fixed bottom-0 left-0 w-full h-[95px] z-[40] pointer-events-none ${bgMain}`}>
-                  <div className={`absolute bottom-full left-0 w-full h-10 bg-gradient-to-t ${isDark ? 'from-[#121212] to-transparent' : 'from-[#f2f2f7] to-transparent'}`}></div>
-              </div>
-
-              <div className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[90%] max-w-[380px] z-[50] pointer-events-auto">
-                  <div className={`rounded-full p-2 flex justify-between items-center shadow-[0_10px_40px_rgba(0,0,0,0.5)] border ${isDark ? 'bg-[#1c1c1e]/90 border-white/10 backdrop-blur-xl' : 'bg-white/95 border-black/10 backdrop-blur-xl'}`}>
-                      
-                      <button onClick={() => setActiveTab('home')} className={`w-1/4 py-3 flex justify-center rounded-[1.2rem] transition-all ${activeTab === 'home' ? (isDark ? 'bg-white/10 shadow-[0_0_15px_rgba(255,255,255,0.05)] border border-white/5' : 'bg-black/5 shadow-sm border border-black/5') : 'opacity-50 hover:opacity-80'}`}>
-                          <Package size={22} strokeWidth={2} className={textPrimary} />
-                      </button>
-                      
-                      <button onClick={() => setActiveTab('history')} className={`w-1/4 py-3 flex justify-center rounded-[1.2rem] transition-all ${activeTab === 'history' ? (isDark ? 'bg-white/10 shadow-[0_0_15px_rgba(255,255,255,0.05)] border border-white/5' : 'bg-black/5 shadow-sm border border-black/5') : 'opacity-50 hover:opacity-80'}`}>
-                          <Clock size={22} strokeWidth={2} className={textPrimary} />
-                      </button>
-
-                      <button onClick={() => setActiveTab('wallet')} className={`w-1/4 py-3 flex justify-center rounded-[1.2rem] transition-all ${activeTab === 'wallet' ? (isDark ? 'bg-white/10 shadow-[0_0_15px_rgba(255,255,255,0.05)] border border-white/5' : 'bg-black/5 shadow-sm border border-black/5') : 'opacity-50 hover:opacity-80'}`}>
-                          <Wallet size={22} strokeWidth={2} className={textPrimary} />
-                      </button>
-
-                      <button onClick={onToggleStatus} className={`w-1/4 py-3 flex justify-center rounded-[1.2rem] transition-all opacity-90 hover:opacity-100 hover:scale-105 ${driver.status === 'offline' ? 'text-red-500' : 'text-[#34d399]'}`}>
-                          <Power size={22} strokeWidth={2.5} />
-                      </button>
-                  </div>
-              </div>
-              
-              <div className="fixed bottom-1 w-full text-center z-[50] pointer-events-none">
-                  <p className="text-[9px] font-bold text-slate-400 uppercase tracking-[0.15em] drop-shadow-md">Desenvolvido por Jhan Houzer</p>
-              </div>
-
-              {showLogoutConfirm && (
-                  <div className="fixed inset-0 z-[1000] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in pointer-events-auto">
-                      <div className={`w-full max-w-sm rounded-3xl p-6 shadow-2xl text-center border ${isDark ? 'bg-[#1c1c1e] border-white/10' : 'bg-white border-slate-200'}`}>
-                          <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                              <LogOut size={32} className="text-red-500" />
-                          </div>
-                          <h2 className={`text-xl font-bold mb-2 ${textPrimary}`}>Sair do Aplicativo?</h2>
-                          <p className={`text-sm mb-6 ${textSecondary}`}>Tem certeza que deseja desconectar da sua conta?</p>
-                          <div className="flex w-full gap-3">
-                              <button onClick={() => setShowLogoutConfirm(false)} className={`flex-1 font-bold py-3.5 rounded-xl transition-colors ${isDark ? 'bg-white/5 hover:bg-white/10 text-white' : 'bg-slate-100 hover:bg-slate-200 text-slate-700'}`}>Cancelar</button>
-                              <button onClick={() => { setShowLogoutConfirm(false); onLogout(); }} className="flex-1 bg-red-600 hover:bg-red-500 text-white font-bold py-3.5 rounded-xl transition-colors shadow-lg shadow-red-600/20">Sim, Sair</button>
-                          </div>
-                      </div>
-                  </div>
-              )}
-          </>
-      )}
+      {/* NAVBAR */}
+      <div className="fixed bottom-8 left-1/2 -translate-x-1/2 w-[92%] max-w-[400px] z-50 pointer-events-auto">
+          <div className={`rounded-full p-2 flex justify-between items-center ${isDark ? 'bg-black/80 border-white/10' : 'bg-white/90 border-black/5'} backdrop-blur-2xl border shadow-2xl`}>
+              <button onClick={() => setActiveTab('home')} className={`flex-1 py-3 flex justify-center rounded-full transition-all ${activeTab === 'home' ? 'bg-blue-600 text-white' : 'text-slate-500'}`}><Package size={22}/></button>
+              <button onClick={() => setActiveTab('history')} className={`flex-1 py-3 flex justify-center rounded-full transition-all ${activeTab === 'history' ? 'bg-blue-600 text-white' : 'text-slate-500'}`}><Clock size={22}/></button>
+              <button onClick={() => setActiveTab('wallet')} className={`flex-1 py-3 flex justify-center rounded-full transition-all ${activeTab === 'wallet' ? 'bg-blue-600 text-white' : 'text-slate-500'}`}><Wallet size={22}/></button>
+              <button onClick={onToggleStatus} className={`flex-1 py-3 flex justify-center rounded-full transition-all ${driver.status === 'offline' ? 'text-red-500' : 'text-emerald-500'}`}><Power size={22}/></button>
+          </div>
+      </div>
     </div>
   );
 }
